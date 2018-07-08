@@ -28,7 +28,7 @@ func init() {
 	}
 	l := conf.GetLogger()
 	if !conf.IsDebugMode() && !conf.IsProductionMode() {
-		l.Fatal("Invalid ZNT_MODE variable, it must be either `debug` or `production`")
+		l.Fatal("Invalid EOCS_UTIL variable, it must be either `debug` or `production`")
 	}
 
 }
@@ -43,9 +43,6 @@ func Cfg() *Config {
 
 func (cfg *Config) GetLogger() *logrus.Logger {
 	var l = logrus.New()
-	if cfg.IsProductionMode() {
-		l.Formatter = &logrus.JSONFormatter{}
-	}
 	return l
 }
 
