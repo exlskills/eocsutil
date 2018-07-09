@@ -32,8 +32,8 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 		if c.Org != "" {
 			fullCourseData.Org = c.Org
 		}
-		if c.Course != "" {
-			fullCourseData.Course = c.Course
+		if c.CourseCode != "" {
+			fullCourseData.CourseCode = c.CourseCode
 		}
 		c = fullCourseData
 	}
@@ -46,12 +46,44 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 	return c, nil
 }
 
+func exportCourseRecursive(course ir.Course, rootDir string) (err error) {
+	courseFile := &Course{
+		URLName:     course.GetURLName(),
+		DisplayName: course.GetDisplayName(),
+		Org:         course.GetOrgName(),
+		CourseCode:  course.GetCourseCode(),
+		CourseImage: course.GetCourseImage(),
+		Language:    course.GetLanguage(),
+		ExtraAttrs:  mapToXMLAttrs(course.GetExtraAttributes()),
+	}
+	err = appendIRChaptersToCourse(courseFile, course.GetChapters())
+	if err != nil {
+		return err
+	}
+	courseFileXML, err := xml.Marshal(courseFile)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(rootDir, "course.xml"), courseFileXML, 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type ExportCourseRootFile struct {
+	XMLName xml.Name `xml:"course"`
+	URLName string   `xml:"url_name,attr"`
+	Org     string   `xml:"org,attr"`
+	Course  string   `xml:"course,attr"`
+}
+
 type Course struct {
 	XMLName     xml.Name   `xml:"course"`
 	URLName     string     `xml:"url_name,attr"`
 	DisplayName string     `xml:"display_name,attr"`
 	Org         string     `xml:"org,attr"`
-	Course      string     `xml:"course,attr"`
+	CourseCode  string     `xml:"course,attr"`
 	CourseImage string     `xml:"course_image,attr"`
 	Language    string     `xml:"language,attr"`
 	ExtraAttrs  []xml.Attr `xml:",any,attr"`
@@ -68,6 +100,10 @@ func (course *Course) GetURLName() string {
 
 func (course *Course) GetOrgName() string {
 	return course.Org
+}
+
+func (course *Course) GetCourseCode() string {
+	return course.CourseCode
 }
 
 func (course *Course) GetCourseImage() string {

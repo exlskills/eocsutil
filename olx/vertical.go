@@ -18,6 +18,23 @@ func verticalsToIRVerticals(verts []*Vertical) []ir.Vertical {
 	return irVerts
 }
 
+func appendIRVerticalsToSequential(seq *Sequential, verts []ir.Vertical) (err error) {
+	seq.Verticals = make([]*Vertical, 0, len(verts))
+	for _, v := range verts {
+		newV := &Vertical{
+			URLName:     v.GetURLName(),
+			DisplayName: v.GetDisplayName(),
+			ExtraAttrs:  mapToXMLAttrs(v.GetExtraAttributes()),
+		}
+		err = appendIRBlocksToVertical(newV, v.GetBlocks())
+		if err != nil {
+			return err
+		}
+		seq.Verticals = append(seq.Verticals, newV)
+	}
+	return nil
+}
+
 type Vertical struct {
 	XMLName     xml.Name   `xml:"vertical"`
 	URLName     string     `xml:"url_name,attr"`

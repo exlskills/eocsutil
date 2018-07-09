@@ -20,3 +20,11 @@ func xmlAttrsToMap(attrs []xml.Attr) map[string]string {
 	}
 	return ret
 }
+
+func mapToXMLAttrs(m map[string]string) []xml.Attr {
+	ret := make([]xml.Attr, 0, len(m))
+	for k, v := range m {
+		ret = append(ret, xml.Attr{Name: xml.Name{Local: k}, Value: v})
+	}
+	return ret
+}

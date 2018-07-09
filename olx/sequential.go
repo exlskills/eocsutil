@@ -18,6 +18,25 @@ func sequentialsToIRSequentials(seqs []*Sequential) []ir.Sequential {
 	return irSeqs
 }
 
+func appendIRSequentialsToChapter(chap *Chapter, seqs []ir.Sequential) (err error) {
+	chap.Sequentials = make([]*Sequential, 0, len(seqs))
+	for _, s := range seqs {
+		newS := &Sequential{
+			URLName:     s.GetURLName(),
+			DisplayName: s.GetDisplayName(),
+			Graded:      s.GetIsGraded(),
+			Format:      s.GetAssignmentType(),
+			ExtraAttrs:  mapToXMLAttrs(s.GetExtraAttributes()),
+		}
+		err = appendIRVerticalsToSequential(newS, s.GetVerticals())
+		if err != nil {
+			return err
+		}
+		chap.Sequentials = append(chap.Sequentials, newS)
+	}
+	return nil
+}
+
 type Sequential struct {
 	XMLName     xml.Name    `xml:"sequential"`
 	URLName     string      `xml:"url_name,attr"`

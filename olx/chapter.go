@@ -18,6 +18,23 @@ func chaptersToIRChapters(chaps []*Chapter) []ir.Chapter {
 	return irChaps
 }
 
+func appendIRChaptersToCourse(course *Course, chaps []ir.Chapter) (err error) {
+	course.Chapters = make([]*Chapter, 0, len(chaps))
+	for _, c := range chaps {
+		newC := &Chapter{
+			URLName:     c.GetURLName(),
+			DisplayName: c.GetDisplayName(),
+			ExtraAttrs:  mapToXMLAttrs(c.GetExtraAttributes()),
+		}
+		err = appendIRSequentialsToChapter(newC, c.GetSequentials())
+		if err != nil {
+			return err
+		}
+		course.Chapters = append(course.Chapters, newC)
+	}
+	return nil
+}
+
 type Chapter struct {
 	XMLName     xml.Name      `xml:"chapter"`
 	URLName     string        `xml:"url_name,attr"`

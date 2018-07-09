@@ -4,6 +4,7 @@ import (
 	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/ir"
+	"os"
 )
 
 var Log = config.Cfg().GetLogger()
@@ -24,6 +25,19 @@ func (o *OLX) Import(fromUri string) (toIntermediateRepresentation ir.Course, er
 }
 
 func (o *OLX) Export(fromIntermediateRepresentation ir.Course, toUri string, forceExport bool) (err error) {
-	// TODO implement OLX export
-	return nil
+	rootDir, err := eocsuri.GetAbsolutePathFromFileURI(toUri)
+	if err != nil {
+		return err
+	}
+	if forceExport {
+		err = os.RemoveAll(rootDir)
+		if err != nil {
+			return err
+		}
+	}
+	err = os.MkdirAll(rootDir, 0775)
+	if err != nil {
+		return err
+	}
+	return exportCourseRecursive(fromIntermediateRepresentation, rootDir)
 }

@@ -13,18 +13,6 @@ func (vert *Vertical) GetURLName() string {
 
 }
 
-func (vert *Vertical) HasContent() bool {
-
-}
-
-func (vert *Vertical) GetContentType() *string {
-
-}
-
-func (vert *Vertical) GetContent() *string {
-
-}
-
 func (vert *Vertical) GetExtraAttributes() map[string]string {
 
 }
