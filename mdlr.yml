@@ -1,0 +1,7 @@
+# Welcome to mdlr.yml
+# Use the mdlr CLI to edit and explore this file
+# WARNING: The mdlr CLI does not preserve comments!
+
+syntax: 1
+modules: {eocs-demo-course: {type: git, path: eocs-demo-course, url: 'https://github.com/exlskills/eocs-demo-course.git',
+    branch: master, commit: HEAD, depth: 0}}

@@ -49,5 +49,7 @@ nohup.out
 config.json
 
 vendor/*
+node_modules/*
 
+eocs-demo-course
 

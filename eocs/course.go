@@ -19,6 +19,10 @@ func (course *Course) GetOrgName() string {
 
 }
 
+func (course *Course) GetCourseCode() string {
+
+}
+
 func (course *Course) GetCourseImage() string {
 
 }
