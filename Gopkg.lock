@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "exlgit.com/nva/ecmd"
+  packages = ["utils"]
+  revision = "65f25f07c62475827a7462a15d1bd3c84669c24b"
+
+[[projects]]
+  branch = "master"
   name = "github.com/alecthomas/template"
   packages = [".","parse"]
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
@@ -24,6 +30,12 @@
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -49,9 +61,15 @@
   revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
   version = "v2.2.6"
 
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "08c4abf1294e7061dd25df534de34fe8e22580d475e598235698498371889ec9"
+  inputs-digest = "67b6be93d63053f571abef60bf41819eabf2927f3f606e970b13a22c0b749230"
   solver-name = "gps-cdcl"
   solver-version = 1
