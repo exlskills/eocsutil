@@ -2,9 +2,9 @@ package eocsuri
 
 import (
 	"fmt"
-	"strings"
 	"github.com/pkg/errors"
 	"path/filepath"
+	"strings"
 )
 
 func VerifyAndClean(uri string) (clean string, err error) {

@@ -3,7 +3,8 @@ package ir
 type Block interface {
 	GetDisplayName() string
 	GetURLName() string
-	GetContentType() string
-	GetContent() string
+	GetBlockType() string
+	GetContentOLX() (string, error)
+	GetContentMD() (string, error)
 	GetExtraAttributes() map[string]string
 }

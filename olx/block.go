@@ -2,7 +2,10 @@ package olx
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/exlskills/eocsutil/ir"
+	"github.com/exlskills/eocsutil/mdutils"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,13 +23,29 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 	vert.Blocks = make([]*Block, 0, len(blocks))
 	for _, b := range blocks {
 		newB := &Block{
-			XMLName:     xml.Name{Local: b.GetContentType()},
+			XMLName:     xml.Name{Local: b.GetBlockType()},
 			URLName:     b.GetURLName(),
 			DisplayName: b.GetDisplayName(),
 			ExtraAttrs:  mapToXMLAttrs(b.GetExtraAttributes()),
 		}
 		var nodes []*BlockNode
-		err = xml.Unmarshal([]byte(b.GetContent()), &nodes)
+		olxStr, err := b.GetContentOLX()
+		if err != nil {
+			if b.GetBlockType() == "html" {
+				md, err := b.GetContentMD()
+				if err != nil {
+					// There's nothing else that we can do to recover at this point
+					return err
+				}
+				olxStr, err = mdutils.MakeHTML(md, "gh")
+				if err != nil {
+					return errors.New(fmt.Sprintf("olx: error converting md to OLX: %s", err.Error()))
+				}
+			} else {
+				return err
+			}
+		}
+		err = xml.Unmarshal([]byte(olxStr), &nodes)
 		if err != nil {
 			return err
 		}
@@ -39,8 +58,8 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 type Block struct {
 	XMLName          xml.Name
 	ContentType      string       `xml:"-"`
-	URLName          string       `xml:"url_name,attr"`
-	DisplayName      string       `xml:"display_name,attr"`
+	URLName          string       `xml:"url_name,attr,omitempty"`
+	DisplayName      string       `xml:"display_name,attr,omitempty"`
 	Filename         string       `xml:"filename,attr,omitempty"`
 	Markdown         string       `xml:"markdown,attr,omitempty"`
 	ExtraAttrs       []xml.Attr   `xml:",any,attr"`
@@ -104,12 +123,25 @@ func (block *Block) GetURLName() string {
 	return block.URLName
 }
 
-func (block *Block) GetContentType() string {
+func (block *Block) GetBlockType() string {
 	return block.ContentType
 }
 
-func (block *Block) GetContent() string {
-	return string(block.ContentTreeBytes)
+func (block *Block) GetContentMD() (string, error) {
+	// In OLX, there is only one type that has markdown directly -- problem
+	if block.ContentType == "problem" {
+		return block.Markdown, nil
+	}
+	// And we can use mdutils to try to get MD from HTML
+	if block.ContentType == "html" {
+		return mdutils.MakeMD(string(block.ContentTreeBytes), "gh")
+	}
+	return "", errors.New("olx: unable to return MD for non-problem block")
+}
+
+func (block *Block) GetContentOLX() (string, error) {
+	// We always have OLX here :)
+	return string(block.ContentTreeBytes), nil
 }
 
 func (block *Block) GetExtraAttributes() map[string]string {

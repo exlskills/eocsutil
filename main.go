@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/exlskills/eocsutil/config"
+	"github.com/exlskills/eocsutil/eocs"
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/extfmt"
 	"github.com/exlskills/eocsutil/olx"
@@ -24,7 +25,7 @@ var (
 var Log = config.Cfg().GetLogger()
 
 func init() {
-	// extfmt.RegisterExtFmt("eocs", eocs.NewEOCSFormat())
+	extfmt.RegisterExtFmt("eocs", eocs.NewEOCSFormat())
 	extfmt.RegisterExtFmt("olx", olx.NewOLXExtFmt())
 }
 
