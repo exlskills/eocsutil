@@ -51,6 +51,9 @@ func (chap *Chapter) resolveRecursive(rootDir string) (err error) {
 		}
 		fullChap := &Chapter{}
 		err = xml.Unmarshal(fullChapXML, fullChap)
+		if err != nil {
+			return err
+		}
 		chap.DisplayName = fullChap.DisplayName
 		chap.Sequentials = fullChap.Sequentials
 	}

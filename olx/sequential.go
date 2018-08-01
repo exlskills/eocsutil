@@ -55,6 +55,9 @@ func (seq *Sequential) resolveRecursive(rootDir string) (err error) {
 		}
 		fullSeq := &Sequential{}
 		err = xml.Unmarshal(fullSeqXML, fullSeq)
+		if err != nil {
+			return err
+		}
 		seq.DisplayName = fullSeq.DisplayName
 		seq.Graded = fullSeq.Graded
 		seq.Format = fullSeq.Format

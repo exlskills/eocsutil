@@ -51,6 +51,9 @@ func (vert *Vertical) resolveRecursive(rootDir string) (err error) {
 		}
 		fullVert := &Vertical{}
 		err = xml.Unmarshal(fullVertXML, fullVert)
+		if err != nil {
+			return err
+		}
 		vert.DisplayName = fullVert.DisplayName
 		vert.Blocks = fullVert.Blocks
 	}

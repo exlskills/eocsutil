@@ -101,6 +101,7 @@ func (block *Block) resolveRecursive(rootDir string) (err error) {
 			}
 			err = xml.Unmarshal(htmlFileHTML, &block.ContentTree)
 			if err != nil {
+				Log.Errorf("Encountered invalid HTML in %s, error: %s", filepath.Join(rootDir, block.XMLName.Local, urlNameToHTMLFileName(block.Filename)), err.Error())
 				return err
 			}
 		}
