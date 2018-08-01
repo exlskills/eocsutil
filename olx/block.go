@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func blocksToIRBlocks(blocks []*Block) []ir.Block {
@@ -99,14 +100,25 @@ func (block *Block) resolveRecursive(rootDir string) (err error) {
 			if err != nil {
 				return err
 			}
+			block.ContentTreeBytes = htmlFileHTML
+			// We have to do this because of a bug/feature in golang: https://github.com/golang/go/issues/20754
+			if !strings.HasPrefix(string(htmlFileHTML), "<html>") {
+				htmlFileHTML = append([]byte("<html>"), htmlFileHTML...)
+				htmlFileHTML = append(htmlFileHTML, []byte("</html>")...)
+			}
 			err = xml.Unmarshal(htmlFileHTML, &block.ContentTree)
 			if err != nil {
 				Log.Errorf("Encountered invalid HTML in %s, error: %s", filepath.Join(rootDir, block.XMLName.Local, urlNameToHTMLFileName(block.Filename)), err.Error())
 				return err
 			}
+			// Note: this is again due to the golang bug/feature described above. We will also *always* have the first element even if it's empty since we are adding the <html></html> above
+			block.ContentTree = block.ContentTree[0].Nodes
+			if block.ContentTree == nil {
+				block.ContentTree = []*BlockNode{}
+			}
 		}
 	}
-	if block.ContentTree != nil {
+	if block.ContentTree != nil && block.ContentTreeBytes == nil {
 		contentBytes, err := xml.Marshal(block.ContentTree)
 		if err != nil {
 			return err
