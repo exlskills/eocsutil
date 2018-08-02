@@ -47,7 +47,7 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 			if err != nil {
 				return err
 			}
-			md, err := mdutils.MakeMD(html, "gh")
+			md, err := mdutils.MakeMD(html, "github")
 			if err != nil {
 				return err
 			}

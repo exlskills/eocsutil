@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+func MakeOLX(md string) (olx string, err error) {
+	return execShowdown("makeolx", "olx", md)
+}
+
 func MakeHTML(md, flavor string) (html string, err error) {
 	return execShowdown("makehtml", flavor, md)
 }

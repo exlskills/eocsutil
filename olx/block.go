@@ -38,7 +38,7 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 					// There's nothing else that we can do to recover at this point
 					return err
 				}
-				olxStr, err = mdutils.MakeHTML(md, "gh")
+				olxStr, err = mdutils.MakeHTML(md, "github")
 				if err != nil {
 					return errors.New(fmt.Sprintf("olx: error converting md to OLX: %s", err.Error()))
 				}
@@ -147,7 +147,7 @@ func (block *Block) GetContentMD() (string, error) {
 	}
 	// And we can use mdutils to try to get MD from HTML
 	if block.ContentType == "html" {
-		return mdutils.MakeMD(string(block.ContentTreeBytes), "gh")
+		return mdutils.MakeMD(string(block.ContentTreeBytes), "github")
 	}
 	return "", errors.New("olx: unable to return MD for non-problem block")
 }

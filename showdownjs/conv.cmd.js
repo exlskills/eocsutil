@@ -1,3 +1,5 @@
+import markdownToXml from "./olxutils";
+
 var yargs = require('yargs'),
     fs = require('fs'),
     Messenger = require('./messenger.js'),
@@ -117,6 +119,8 @@ function run (makeOpt) {
         to = converter.makeHtml(from);
     } else if (makeOpt === 'makemarkdown') {
         to = converter.makeMarkdown(from);
+    } else if (makeOpt === '') {
+        to = markdownToXml(from);
     } else {
         messenger.printError('Invalid conversion type: ' + makeOpt + '. Must be either makehtml or makemarkdown.');
         messenger.errorExit(e);

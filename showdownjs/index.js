@@ -25,6 +25,8 @@ yargs
     .example('showdown makehtml -i foo.md -o bar.html', 'Converts \'foo.md\' to \'bar.html\'')
     .command('makemarkdown', 'Converts html into md')
     .example('showdown makemarkdown -i foo.html -o bar.md', 'Converts \'foo.html\' to \'bar.md\'')
+    .command('makeolx', 'Converts prob.md to olx')
+    .example('showdown makeolx -i foo.prob.md -o bar.olx', 'Converts \'foo.prob.md\' to \'bar.olx\'')
     .wrap(yargs.terminalWidth());
 
 const argv = yargs.argv,
@@ -34,6 +36,8 @@ if (command === 'makehtml') {
     require('./conv.cmd.js').run('makehtml');
 } else if (command === 'makemarkdown') {
     require('./conv.cmd.js').run('makemarkdown');
+} else if (command === 'makeolx') {
+    require('./conv.cmd.js').run('makeolx');
 } else {
     yargs.showHelp();
 }
