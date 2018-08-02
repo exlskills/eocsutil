@@ -18,6 +18,6 @@ func NewProblemFromMD(md string) (prob *Problem, err error) {
 	if err != nil {
 		return nil, err
 	}
-	err = xml.Unmarshal([]byte(x), prob)
+	err = xml.Unmarshal([]byte(x), &prob)
 	return
 }

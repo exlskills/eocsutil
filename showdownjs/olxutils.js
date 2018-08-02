@@ -1,15 +1,6 @@
-import _ from 'lodash';
-
-var $;
-
-require("jsdom").env("", function(err, window) {
-    if (err) {
-        console.error(err);
-        return;
-    }
-
-    $ = require("jquery")(window);
-});
+var _ = require('lodash');
+var JSDOM = require("jsdom").JSDOM;
+var $ = require("jquery")(new JSDOM().window);
 
 // Adapted from browser xblock: https://github.com/edx/edx-platform/blob/master/common/lib/xmodule/xmodule/js/src/problem/edit.js#L307
 // At commit b370fe23148b3c6c38f9481e6658916f11fa0985
@@ -427,7 +418,6 @@ var markdownToXml = function(markdown) {
             return processNumericalResponse(answersList) || processStringResponse(answersList);
         });
 
-
         // replace explanations
         xml = xml.replace(/\[explanation\]\n?([^\]]*)\[\/?explanation\]/gmi, function(match, p1) {
             return '<solution>\n<div class="detailed-solution">\n' +
@@ -498,8 +488,10 @@ var markdownToXml = function(markdown) {
                     responseType[0].appendChild(child);
                 }
             });
-            serializer = new XMLSerializer();
 
+            // Note: replaced with 'xmlserializer' dep, as there is no native XMLSerializer in node
+            // serializer = new XMLSerializer();
+            var serializer = require('xmlserializer');
             xml = serializer.serializeToString(responseType[0]);
 
             // remove xmlns attribute added by the serializer
@@ -532,4 +524,4 @@ var markdownToXml = function(markdown) {
     return finalXml;
 };
 
-export default markdownToXml;
+module.exports = markdownToXml;

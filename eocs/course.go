@@ -21,6 +21,14 @@ import (
 	"time"
 )
 
+type parserCtx struct {
+	course  *Course
+	chapIdx int
+	seqIdx  int
+	vertIdx int
+	n       int
+}
+
 func resolveCourseRecursive(rootDir string) (*Course, error) {
 	rootCourseYAML, err := getIndexYAML(rootDir)
 	if err != nil {
@@ -31,33 +39,236 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO implement reading the rest of the course
-	//if _, err := os.Stat(filepath.Join(rootDir, courseDirName, urlNameToXMLFileName(c.URLName))); err == nil {
-	//	fullCourseXML, err := ioutil.ReadFile(filepath.Join(rootDir, courseDirName, urlNameToXMLFileName(c.URLName)))
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	fullCourseData := &Course{}
-	//	err = xml.Unmarshal(fullCourseXML, fullCourseData)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	fullCourseData.URLName = c.URLName
-	//	if c.Org != "" {
-	//		fullCourseData.Org = c.Org
-	//	}
-	//	if c.CourseCode != "" {
-	//		fullCourseData.CourseCode = c.CourseCode
-	//	}
-	//	c = fullCourseData
-	//}
-	//for i := range c.Chapters {
-	//	err = c.Chapters[i].resolveRecursive(rootDir)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
+	pcx := &parserCtx{
+		course:  c,
+		chapIdx: -1,
+		seqIdx:  -1,
+		vertIdx: -1,
+		n:       0,
+	}
+	err = filepath.Walk(rootDir, courseWalkFunc(rootDir, pcx))
+	if err != nil {
+		return nil, err
+	}
 	return c, nil
+}
+
+func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		defer func() { pcx.n++ }()
+		if pcx.n == 0 {
+			// The first iteration is always the parent directory, so skip it
+			return nil
+		}
+		base := filepath.Base(path)
+		ext := filepath.Ext(path)
+		if err != nil {
+			Log.Error(err)
+			return nil
+		}
+		if !info.IsDir() || ext == ".repl" {
+			// We always ignore these since they are handled by other import funcs
+			return nil
+		}
+		// Now we know that we've hit a directory...
+		if isIgnoredDir(base) {
+			return filepath.SkipDir
+		}
+		pathParts := strings.Split(strings.Replace(path, rootDir+string(filepath.Separator), "", 1), string(filepath.Separator))
+		if len(pathParts) == 1 {
+			// Create a new chapter
+			pcx.vertIdx = -1
+			pcx.seqIdx = -1
+			pcx.chapIdx++
+			var chap *Chapter
+			idx, dispName, err := indexAndNameFromConcatenated(base)
+			if err != nil {
+				return err
+			}
+			if pcx.chapIdx != idx {
+				return errors.New("invalid chapter directory index prefix")
+			}
+			if indxBytes, err := getIndexYAML(path); err == nil {
+				err = yaml.Unmarshal(indxBytes, &chap)
+				if err != nil {
+					return err
+				}
+				dispName = chap.DisplayName
+			} else {
+				chap.URLName = esmodels.ESID()
+				chap.DisplayName = dispName
+				// Persist the ID
+				err := writeIndexYAML(path, chap)
+				if err != nil {
+					return err
+				}
+			}
+			chap.Index = pcx.chapIdx
+			pcx.course.Chapters = append(pcx.course.Chapters, chap)
+		} else if len(pathParts) == 2 {
+			// Create a new sequential
+			pcx.vertIdx = -1
+			pcx.seqIdx++
+			var seq *Sequential
+			idx, dispName, err := indexAndNameFromConcatenated(base)
+			if err != nil {
+				return err
+			}
+			if pcx.seqIdx != idx {
+				return errors.New("invalid sequential directory index prefix")
+			}
+			if indxBytes, err := getIndexYAML(path); err == nil {
+				err = yaml.Unmarshal(indxBytes, &seq)
+				if err != nil {
+					return err
+				}
+				dispName = seq.DisplayName
+			} else {
+				seq.URLName = esmodels.ESID()
+				seq.DisplayName = dispName
+				// Persist the ID
+				err := writeIndexYAML(path, seq)
+				if err != nil {
+					return err
+				}
+			}
+			pcx.course.Chapters[pcx.chapIdx].Sequentials = append(pcx.course.Chapters[pcx.chapIdx].Sequentials, seq)
+		} else if len(pathParts) == 3 {
+			// Create an index a new vertical
+			pcx.vertIdx++
+			var vert *Vertical
+			idx, dispName, err := indexAndNameFromConcatenated(base)
+			if err != nil {
+				return err
+			}
+			if pcx.vertIdx != idx {
+				return errors.New("invalid vertical directory index prefix")
+			}
+			if indxBytes, err := getIndexYAML(path); err == nil {
+				err = yaml.Unmarshal(indxBytes, &vert)
+				if err != nil {
+					return err
+				}
+				dispName = vert.DisplayName
+			} else {
+				vert.URLName = esmodels.ESID()
+				vert.DisplayName = dispName
+				// Persist the ID
+				err := writeIndexYAML(path, vert)
+				if err != nil {
+					return err
+				}
+			}
+			vert.Blocks, err = extractBlocksFromVerticalDirectory(path)
+			if err != nil {
+				return err
+			}
+			pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals = append(pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals, vert)
+			// Since the vertical directory was handled by the 'extractBlocks' func above, we want to keep moving...
+			return filepath.SkipDir
+		} else {
+			Log.Println(pathParts)
+			Log.Println(pcx)
+			return errors.New("eocs: invalid directory depth/name combination")
+		}
+		return nil
+	}
+}
+
+func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err error) {
+	vertDirListing, err := ioutil.ReadDir(rootPath)
+	if err != nil {
+		return nil, err
+	}
+	// We ignore all directories here, until they become explicitly imported by a repl or other method
+	for _, fi := range vertDirListing {
+		if strings.HasSuffix(fi.Name(), ".prob.md") {
+			// Parse as `problem` block
+			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
+			if err != nil {
+				return nil, err
+			}
+			prob, err := olxproblems.NewProblemFromMD(string(byteContents))
+			if err != nil {
+				Log.Error("Encountered error in file: ", filepath.Join(rootPath, fi.Name()))
+				return nil, err
+			}
+			var rpl *BlockREPL
+			if prob.StringResponse != nil && strings.HasPrefix(prob.StringResponse.Answer, "#!") {
+				// Start looking for the REPL
+				yamlName, err := getProblemREPLPath(prob.StringResponse.Answer)
+				if err != nil {
+					return nil, err
+				}
+				rplYamlContents, err := ioutil.ReadFile(filepath.Join(rootPath, yamlName))
+				if err != nil {
+					return nil, err
+				}
+				err = loadReplForEOCS(rplYamlContents, rpl, rootPath)
+				if err != nil {
+					return nil, err
+				}
+			}
+			blks = append(blks, &Block{
+				BlockType: "problem",
+				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
+				URLName:     esmodels.ESID(),
+				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
+				Markdown:    string(byteContents),
+				REPL:        rpl,
+			})
+		} else if strings.HasSuffix(fi.Name(), ".md") {
+			// Parse as `html` block
+			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
+			if err != nil {
+				return nil, err
+			}
+			blks = append(blks, &Block{
+				BlockType: "html",
+				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
+				URLName:     esmodels.ESID(),
+				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
+				Markdown:    string(byteContents),
+			})
+		} else if strings.HasSuffix(fi.Name(), ".repl.yaml") && !strings.HasSuffix(fi.Name(), ".prob.repl.yaml") {
+			// Parse as `exleditor` block
+			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
+			if err != nil {
+				return nil, err
+			}
+			var rpl *BlockREPL
+			err = loadReplForEOCS(byteContents, rpl, rootPath)
+			if err != nil {
+				return nil, err
+			}
+			blks = append(blks, &Block{
+				BlockType: "exleditor",
+				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
+				URLName:     esmodels.ESID(),
+				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
+				REPL:        rpl,
+			})
+		}
+	}
+	return
+}
+
+func loadReplForEOCS(yamlBytes []byte, rpl *BlockREPL, rootPath string) (err error) {
+	err = yaml.Unmarshal(yamlBytes, &rpl)
+	if err != nil {
+		return err
+	}
+	if !rpl.IsAPIVersionValid() {
+		return errors.New("eocs: invalid repl api_version")
+	}
+	if !rpl.IsEnvironmentKeyValid() {
+		return errors.New("eocs: invalid repl environment_key")
+	}
+	err = rpl.LoadFilesFromFS(rootPath)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) {
@@ -315,7 +526,7 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 // olxStrRespToESQCodeData ans field represents the shebang (#!) that points us to the REPL configuration
 func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuestionData, err error) {
 	// TODO don't hard-code this... But for now we need to check that this question has been deliberately formatted
-	if ans != "#!repl('.');" {
+	if isValidProblemREPLShebang(ans) {
 		return cqd, errors.New("stringresponse problem invalid answer shebang (#!)")
 	}
 	return esmodels.CodeQuestionData{
@@ -404,7 +615,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 					}
 					testStr = string(b)
 				}
-				contentBuf.WriteString(fmt.Sprintf(`<iframe class="exlcode-embedded-repl" data-repl-src="%s" data-repl-test="%s" data-repl-tmpl="%s" width="100%%" height="500px"></iframe>`, srcStr, testStr, tmplStr))
+				contentBuf.WriteString(fmt.Sprintf(`<div class="exlcode-embedded-repl" data-repl-src="%s" data-repl-test="%s" data-repl-tmpl="%s" width="100%%" height="500px"></div>`, srcStr, testStr, tmplStr))
 				contentBuf.WriteString("\n")
 			} else if blk.BlockType == "html" {
 				mdContent, err := blk.GetContentMD()

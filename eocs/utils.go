@@ -6,6 +6,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func getIndexYAML(indexDir string) (contents []byte, err error) {
@@ -36,4 +38,33 @@ func writeIndexYAML(indexDir string, object interface{}) (err error) {
 
 func concatDirName(index int, dispName string) string {
 	return fmt.Sprintf("%02d_%s", index, dispName)
+}
+
+func indexAndNameFromConcatenated(concated string) (idx int, name string, err error) {
+	if !strings.Contains(concated, "_") {
+		return 0, "", errors.New("eocs: dir/file name must take the form of 02_File Name where 02 is the index and 'File Name' is the name of the chapter/sequential/vertical/block")
+	}
+	splitStr := strings.SplitN(concated, "_", 2)
+	if len(splitStr) != 2 {
+		return 0, "", errors.New("eocs: dir/file name must take the form of 02_File Name where 02 is the index and 'File Name' is the name of the chapter/sequential/vertical/block")
+	}
+	idx, err = strconv.Atoi(splitStr[0])
+	if err != nil {
+		return 0, "", err
+	}
+	return idx, splitStr[1], nil
+}
+
+var ignoredDirs = map[string]struct{}{
+	".git": {},
+	".hg":  {},
+	".bzr": {},
+	".":    {},
+}
+
+func isIgnoredDir(name string) bool {
+	if _, exists := ignoredDirs[name]; exists {
+		return true
+	}
+	return false
 }
