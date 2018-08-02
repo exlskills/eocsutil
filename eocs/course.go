@@ -94,6 +94,14 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 					return err
 				}
 				dispName = chap.DisplayName
+				if chap.URLName == "" {
+					chap.URLName = esmodels.ESID()
+					// Persist the ID
+					err := writeIndexYAML(path, chap)
+					if err != nil {
+						return err
+					}
+				}
 			} else {
 				chap.URLName = esmodels.ESID()
 				chap.DisplayName = dispName
@@ -123,6 +131,14 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 					return err
 				}
 				dispName = seq.DisplayName
+				if seq.URLName == "" {
+					seq.URLName = esmodels.ESID()
+					// Persist the ID
+					err := writeIndexYAML(path, seq)
+					if err != nil {
+						return err
+					}
+				}
 			} else {
 				seq.URLName = esmodels.ESID()
 				seq.DisplayName = dispName
@@ -141,6 +157,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			if err != nil {
 				return err
 			}
+			Log.Info("Adding vertical: ", dispName)
 			if pcx.vertIdx != idx {
 				return errors.New("invalid vertical directory index prefix")
 			}
@@ -150,6 +167,14 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 					return err
 				}
 				dispName = vert.DisplayName
+				if vert.URLName == "" {
+					vert.URLName = esmodels.ESID()
+					// Persist the ID
+					err := writeIndexYAML(path, vert)
+					if err != nil {
+						return err
+					}
+				}
 			} else {
 				vert.URLName = esmodels.ESID()
 				vert.DisplayName = dispName
