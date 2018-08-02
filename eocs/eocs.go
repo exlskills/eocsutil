@@ -23,6 +23,7 @@ func (e *EOCS) Import(fromUri string) (toIntermediateRepresentation ir.Course, e
 	}
 	return resolveCourseRecursive(rootDir)
 }
+
 func (e *EOCS) Export(fromIntermediateRepresentation ir.Course, toUri string, forceExport bool) (err error) {
 	rootDir, err := eocsuri.GetAbsolutePathFromFileURI(toUri)
 	if err != nil {
@@ -35,4 +36,16 @@ func (e *EOCS) Export(fromIntermediateRepresentation ir.Course, toUri string, fo
 		}
 	}
 	return exportCourseRecursive(fromIntermediateRepresentation, rootDir)
+}
+
+func (e *EOCS) Push(fromUri, toUri string) error {
+	rootDir, err := eocsuri.GetAbsolutePathFromFileURI(fromUri)
+	if err != nil {
+		return err
+	}
+	course, err := resolveCourseRecursive(rootDir)
+	if err != nil {
+		return err
+	}
+	return upsertCourseRecursive(course, toUri, "webph2_dev")
 }

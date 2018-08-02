@@ -11,6 +11,7 @@ import (
 	"github.com/exlskills/eocsutil/olx/olxproblems"
 	"github.com/exlskills/eocsutil/wsenv"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math"
@@ -229,7 +230,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				if err != nil {
 					return nil, err
 				}
-				err = loadReplForEOCS(rplYamlContents, rpl, rootPath)
+				rpl, err = loadReplForEOCS(rplYamlContents, rootPath)
 				if err != nil {
 					return nil, err
 				}
@@ -262,7 +263,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				return nil, err
 			}
 			var rpl *BlockREPL
-			err = loadReplForEOCS(byteContents, rpl, rootPath)
+			rpl, err = loadReplForEOCS(byteContents, rootPath)
 			if err != nil {
 				return nil, err
 			}
@@ -278,22 +279,22 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 	return
 }
 
-func loadReplForEOCS(yamlBytes []byte, rpl *BlockREPL, rootPath string) (err error) {
+func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err error) {
 	err = yaml.Unmarshal(yamlBytes, &rpl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !rpl.IsAPIVersionValid() {
-		return errors.New("eocs: invalid repl api_version")
+		return nil, errors.New("eocs: invalid repl api_version")
 	}
 	if !rpl.IsEnvironmentKeyValid() {
-		return errors.New("eocs: invalid repl environment_key")
+		return nil, errors.New("eocs: invalid repl environment_key")
 	}
 	err = rpl.LoadFilesFromFS(rootPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return rpl, nil
 }
 
 func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) {
@@ -310,6 +311,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, q := range qs {
 		cInfo, err := db.C("question").UpsertId(q.ID, q)
 		if err != nil {
+			Log.Error("MongoDB error with 'question' object: %s", err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'question' changes: ", *cInfo)
@@ -318,6 +320,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, vc := range vcs {
 		cInfo, err := db.C("versioned_content").UpsertId(vc.ID, vc)
 		if err != nil {
+			Log.Error("MongoDB error with 'versioned_content' object: %s", err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'versioned_content' changes: ", *cInfo)
@@ -326,6 +329,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, ex := range exams {
 		cInfo, err := db.C("exam").UpsertId(ex.ID, ex)
 		if err != nil {
+			Log.Error("MongoDB error with 'exam' object: %s", err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'exam' changes: ", *cInfo)
@@ -333,6 +337,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 
 	cInfo, err := db.C("course").UpsertId(esc.ID, esc)
 	if err != nil {
+		Log.Error("MongoDB error with 'course' object: %s", err.Error())
 		return err
 	}
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
@@ -394,7 +399,7 @@ func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang stri
 	unit.Index = chap.Index + 1
 	unit.FinalExamWeightPct = (1 / float64(nChaps)) * 100
 	unit.AttemptsAllowedPerDay = 2
-	sections := make([]esmodels.Section, len(chap.Sequentials))
+	sections := make([]esmodels.Section, 0, len(chap.Sequentials))
 	for idx, seq := range chap.Sequentials {
 		if seq.GetIsGraded() && strings.HasPrefix(seq.Format, "Final Exam") {
 			seqEx, seqQs, err := extractESExamFeatures(courseID, chap.URLName, seq, lang)
@@ -461,7 +466,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 			return nil, err
 		}
 		qLabel = esmodels.NewIntlStringWrapper(labelMd, lang)
-		qData, err = olxChoicesToESQDataArr(olxProblem.MultipleChoiceResponse.ChoiceGroup.Choices, lang)
+		qData, err = olxChoicesToESQDataArr(olxProblem.ChoiceResponse.CheckboxGroup.Choices, lang)
 		if err != nil {
 			return nil, err
 		}
@@ -515,6 +520,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 }
 
 func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang string) (exam *esmodels.Exam, qs []*esmodels.Question, err error) {
+	exam = &esmodels.Exam{}
 	exam.UseIDETestMode = true
 	exam.ID = sequential.URLName + "_exam"
 	// 1ejFaqz00nJy is Sasha Varlamov
@@ -540,9 +546,10 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 		if err != nil {
 			return nil, nil, err
 		}
-		exam.EstTime += q.EstTimeSec
-		exam.TimeLimit += int(math.Round(float64(q.EstTimeSec) * 1.5))
+		exam.EstTime += int(math.Round(float64(q.EstTimeSec) / 60))
+		exam.TimeLimit += int(math.Round((float64(q.EstTimeSec) * 1.5) / 60))
 		exam.QuestionIDs = append(exam.QuestionIDs, q.ID)
+		exam.QuestionCount++
 		qs = append(qs, q)
 	}
 	return exam, qs, nil
@@ -579,11 +586,14 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 			}
 		}
 		esc = append(esc, esmodels.AnswerChoice{
+			ID: bson.NewObjectId(),
 			// NOTE: This magic math comes from the course collection's schema where the seq is always (index+1)*10
 			Sequence:    (ind + 1) * 10,
 			Text:        esmodels.NewIntlStringWrapper(txtMd, lang),
 			IsAnswer:    c.Correct,
 			Explanation: esmodels.NewIntlStringWrapper(hintMd, lang),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		})
 	}
 	return esc, nil
@@ -601,7 +611,6 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			if blk.BlockType == "problem" {
 				qBlks = append(qBlks, blk)
 			} else if blk.BlockType == "exleditor" {
-				// TODO see how exactly do want to handle this...
 				var (
 					srcStr  string
 					tmplStr string
@@ -654,12 +663,13 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			}
 		}
 		qids := make([]string, 0, len(qBlks))
-		qs = make([]*esmodels.Question, 0, len(qBlks))
 		for qIdx, q := range qBlks {
 			ques, err := extractEQQuestionFromBlock(courseID, unitID, section.ID, fmt.Sprintf("%s_q_%d", vert.URLName, qIdx), q, q.REPL, lang)
 			if err != nil {
+				Log.Error(err)
 				return section, nil, nil, err
 			}
+			qids = append(qids, ques.ID)
 			qs = append(qs, ques)
 		}
 		verContent := &esmodels.VersionedContent{
@@ -667,6 +677,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			LatestVersion: 1,
 			Contents: []esmodels.Content{
 				{
+					ID:      bson.NewObjectId(),
 					Version: 1,
 					Content: esmodels.NewIntlStringWrapper(contentBuf.String(), lang),
 				},
@@ -705,7 +716,6 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			// TODO tags
 			Tags: []string{},
 		}
-		// TODO versioned_content with id _vc
 		section.Cards.Cards = append(section.Cards.Cards, card)
 	}
 	return

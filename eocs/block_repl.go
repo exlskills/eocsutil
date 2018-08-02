@@ -60,7 +60,9 @@ func (repl *BlockREPL) LoadFilesFromFS(rootDir string) error {
 	if repl.TestPath != "" {
 		files, err := loadFilesFromFSForEnv(repl.EnvironmentKey, filepath.Join(rootDir, repl.TestPath))
 		if err != nil {
-			return err
+			// TODO make this fatal later...
+			Log.Warn("Unable to load test directory, despite a path being supplied...")
+			//return err
 		}
 		repl.TestFiles = files
 	}
@@ -142,7 +144,7 @@ func loadFilesFromDirRecursive(dir string) (files map[string]*wsenv.WorkspaceFil
 }
 
 func isValidProblemREPLShebang(sb string) bool {
-	if strings.HasPrefix(sb, "#!exl::repl('") && strings.HasSuffix(sb, "');") {
+	if strings.HasPrefix(sb, "#!exl::repl('") && strings.HasSuffix(sb, "')") {
 		return true
 	}
 	return false
@@ -152,5 +154,5 @@ func getProblemREPLPath(shebang string) (path string, err error) {
 	if !isValidProblemREPLShebang(shebang) {
 		return "", errors.New("invalid problem REPL shebang")
 	}
-	return filepath.Clean(strings.Replace(strings.Replace(shebang, "#!exl::repl('", "", 1), "');", "", 1)), nil
+	return filepath.Clean(strings.Replace(strings.Replace(shebang, "#!exl::repl('", "", 1), "')", "", 1)), nil
 }

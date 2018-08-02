@@ -8,6 +8,7 @@ import (
 	"github.com/exlskills/eocsutil/extfmt"
 	"github.com/exlskills/eocsutil/olx"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"strings"
 )
 
 var (
@@ -34,6 +35,13 @@ func main() {
 	kingpin.CommandLine.Help = "EXL Open Courseware Standard - Utilities"
 	switch kingpin.Parse() {
 	case "convert":
+		if strings.HasPrefix(*convertToURI, "mongodb://") {
+			err := eocs.NewEOCSFormat().Push(*convertFromURI, *convertToURI)
+			if err != nil {
+				Log.Fatalf("Course export failed: %s", err.Error())
+			}
+			return
+		}
 		Log.Info("Importing course for conversion ...")
 		ir, err := getExtFmtF(*convertFromFormat).Import(verifyAndCleanURIF(*convertFromURI))
 		if err != nil {

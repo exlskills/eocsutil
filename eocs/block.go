@@ -38,18 +38,22 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 			}
 			newB.Markdown = md
 		} else if newB.BlockType == "exleditor" {
-			err = newB.UnmarshalREPL(b.GetExtraAttributes()["editor_config"])
+			err = newB.UnmarshalREPLFromOLX(b.GetExtraAttributes()["editor_config"])
 			if err != nil {
 				return err
 			}
 		} else if newB.BlockType == "html" {
-			html, err := b.GetContentOLX()
+			// Try MD first, then HTML as that conversion is expensive...
+			md, err := b.GetContentMD()
 			if err != nil {
-				return err
-			}
-			md, err := mdutils.MakeMD(html, "github")
-			if err != nil {
-				return err
+				html, err := b.GetContentOLX()
+				if err != nil {
+					return err
+				}
+				md, err = mdutils.MakeMD(html, "github")
+				if err != nil {
+					return err
+				}
 			}
 			newB.Markdown = md
 		} else {
@@ -94,7 +98,7 @@ func (block *Block) GetExtraAttributes() map[string]string {
 	return map[string]string{}
 }
 
-func (block *Block) UnmarshalREPL(cfgJSON string) (err error) {
+func (block *Block) UnmarshalREPLFromOLX(cfgJSON string) (err error) {
 	wspc := wsenv.Workspace{}
 	err = json.Unmarshal([]byte(cfgJSON), &wspc)
 	if err != nil {
