@@ -38,6 +38,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/remeh/sizedwaitgroup"
+  packages = ["."]
+  revision = "5582a674300c427060d06980c142aeb52ed20040"
+
+[[projects]]
   name = "github.com/sergi/go-diff"
   packages = ["diffmatchpatch"]
   revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
@@ -68,12 +74,6 @@
   version = "v2.2.6"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/mgo.v2"
-  packages = ["bson","internal/json"]
-  revision = "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
-
-[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -82,6 +82,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c3c0f4e90b217745c6e3c284dfc7ca03d72285f0c7587e7e524c449b6eb25b24"
+  inputs-digest = "077a22b102e3d6515e095928a3173e9c2ea2111b2fdcf7dce09fa3d271c84f02"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -12,6 +12,7 @@ import (
 	"github.com/exlskills/eocsutil/wsenv"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/remeh/sizedwaitgroup"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math"
@@ -28,6 +29,7 @@ type parserCtx struct {
 	seqIdx  int
 	vertIdx int
 	n       int
+	swg *sizedwaitgroup.SizedWaitGroup
 }
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
@@ -40,17 +42,22 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 	if err != nil {
 		return nil, err
 	}
+	swgV := sizedwaitgroup.New(5)
 	pcx := &parserCtx{
 		course:  c,
 		chapIdx: -1,
 		seqIdx:  -1,
 		vertIdx: -1,
 		n:       0,
+		swg: &swgV,
 	}
 	err = filepath.Walk(rootDir, courseWalkFunc(rootDir, pcx))
 	if err != nil {
 		return nil, err
 	}
+	Log.Info("Returned from course directory scanning. Waiting for workers to return ...")
+	pcx.swg.Wait()
+	Log.Info("All course content workers returned.")
 	return c, nil
 }
 
@@ -185,10 +192,8 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 					return err
 				}
 			}
-			vert.Blocks, err = extractBlocksFromVerticalDirectory(path)
-			if err != nil {
-				return err
-			}
+			pcx.swg.Add()
+			go blockExtractionRoutine(pcx.swg, vert, path)
 			pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals = append(pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals, vert)
 			// Since the vertical directory was handled by the 'extractBlocks' func above, we want to keep moving...
 			return filepath.SkipDir
@@ -198,6 +203,15 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			return errors.New("eocs: invalid directory depth/name combination")
 		}
 		return nil
+	}
+}
+
+func blockExtractionRoutine(wg *sizedwaitgroup.SizedWaitGroup, vert *Vertical, path string) {
+	defer wg.Done()
+	var err error
+	vert.Blocks, err = extractBlocksFromVerticalDirectory(path)
+	if err != nil {
+		Log.Fatalf("Encountered fatal error processing blocks for vertical %s (ID: %s), error: %s", vert.DisplayName, vert.URLName, err.Error())
 	}
 }
 
@@ -529,20 +543,17 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 	exam.PassMarkPct = 75
 	for _, vert := range sequential.Verticals {
 		var qBlk *Block
-		var rpl *BlockREPL
-		if len(vert.Blocks) < 1 || len(vert.Blocks) > 2 {
-			return nil, nil, errors.New("final exam vertical should have exactly one or two blocks")
+		if len(vert.Blocks) != 1 {
+			return nil, nil, errors.New("final exam vertical should have exactly one block (a problem block)")
 		}
 		for _, b := range vert.Blocks {
-			if b.BlockType == "exleditor" {
-				rpl = b.REPL
-			} else if b.BlockType == "problem" {
+			if b.BlockType == "problem" {
 				qBlk = b
 			} else {
-				return nil, nil, errors.New("final exam vertical should have exactly one exleditor and problem blocks")
+				return nil, nil, errors.New("final exam vertical block must be of type 'problem'")
 			}
 		}
-		q, err := extractEQQuestionFromBlock(courseID, unitID, sequential.URLName, vert.URLName, qBlk, rpl, lang)
+		q, err := extractEQQuestionFromBlock(courseID, unitID, sequential.URLName, vert.URLName, qBlk, qBlk.REPL, lang)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -558,7 +569,8 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 // olxStrRespToESQCodeData ans field represents the shebang (#!) that points us to the REPL configuration
 func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuestionData, err error) {
 	// TODO don't hard-code this... But for now we need to check that this question has been deliberately formatted
-	if isValidProblemREPLShebang(ans) {
+	if !isValidProblemREPLShebang(ans) {
+		Log.Errorf("Invalid problem shebang. Got %s for repl %v", ans, *rpl)
 		return cqd, errors.New("stringresponse problem invalid answer shebang (#!)")
 	}
 	return esmodels.CodeQuestionData{

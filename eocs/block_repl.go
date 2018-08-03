@@ -19,7 +19,7 @@ type BlockREPL struct {
 	EnvironmentKey string                          `yaml:"environment"`
 	SourcePath     string                          `yaml:"src_path"`
 	Explanation    string                          `yaml:"explanation,omitempty"`
-	TmplPath       string                          `yaml:"tpml_path,omitempty"`
+	TmplPath       string                          `yaml:"tmpl_path,omitempty"`
 	TestPath       string                          `yaml:"test_path,omitempty"`
 	Display        *BlockREPLDisplay               `yaml:"display,omitempty"`
 	SrcFiles       map[string]*wsenv.WorkspaceFile `yaml:"-"`

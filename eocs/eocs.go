@@ -47,5 +47,6 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 	if err != nil {
 		return err
 	}
+	Log.Info("Course import complete!")
 	return upsertCourseRecursive(course, toUri, "webph2_dev")
 }

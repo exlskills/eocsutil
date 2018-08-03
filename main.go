@@ -9,6 +9,11 @@ import (
 	"github.com/exlskills/eocsutil/olx"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"strings"
+	"github.com/exlskills/eocsutil/mdutils"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 var (
@@ -31,6 +36,14 @@ func init() {
 }
 
 func main() {
+	// Do this to ensure that our on exit traps work
+	run()
+	time.Sleep(time.Second * 1)
+}
+
+func run() {
+	defer mdutils.GracefulTeardown()
+	go gracefulShutdown()
 	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version("0.1").Author("EXL Inc.")
 	kingpin.CommandLine.Help = "EXL Open Courseware Standard - Utilities"
 	switch kingpin.Parse() {
@@ -38,26 +51,30 @@ func main() {
 		if strings.HasPrefix(*convertToURI, "mongodb://") {
 			err := eocs.NewEOCSFormat().Push(*convertFromURI, *convertToURI)
 			if err != nil {
-				Log.Fatalf("Course export failed: %s", err.Error())
+				Log.Errorf("Course mongodb push failed: %s", err.Error())
+				return
 			}
 			return
 		}
 		Log.Info("Importing course for conversion ...")
 		ir, err := getExtFmtF(*convertFromFormat).Import(verifyAndCleanURIF(*convertFromURI))
 		if err != nil {
-			Log.Fatalf("Course import failed with: %s", err.Error())
+			Log.Errorf("Course import failed with: %s", err.Error())
+			return
 		}
 		Log.Info("Successfully imported course %s for conversion, now exporting ...", ir.GetDisplayName())
 		err = getExtFmtF(*convertToFormat).Export(ir, verifyAndCleanURIF(*convertToURI), *convertForce)
 		if err != nil {
-			Log.Fatalf("Course export failed with: %s", err.Error())
+			Log.Errorf("Course export failed with: %s", err.Error())
+			return
 		}
 		Log.Infof("Successfully exported course: %s", ir.GetDisplayName())
 	case "verify":
 		Log.Info("Importing course for verification ...")
 		ir, err := getExtFmtF(*verifyFormat).Import(verifyAndCleanURIF(*verifyURI))
 		if err != nil {
-			Log.Fatalf("Course import verification failed with: %s", err.Error())
+			Log.Errorf("Course import verification failed with: %s", err.Error())
+			return
 		}
 		Log.Infof("Successfully verified course: %s", ir.GetDisplayName())
 		return
@@ -81,4 +98,16 @@ func verifyAndCleanURIF(uri string) string {
 		Log.Fatalf("invalid uri: %s", err.Error())
 	}
 	return uri
+}
+
+func gracefulShutdown() {
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, os.Interrupt)
+	signal.Notify(s, syscall.SIGTERM)
+	go func() {
+		<-s
+		fmt.Println("Shutting down gracefully.")
+		mdutils.GracefulTeardown()
+		os.Exit(0)
+	}()
 }

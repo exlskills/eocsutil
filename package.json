@@ -17,11 +17,12 @@
   },
   "homepage": "https://github.com/exlskills/eocsutil#readme",
   "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
     "jquery": "^3.3.1",
     "jsdom": "^11.12.0",
     "lodash": "3.10.1",
     "showdown": "git+https://github.com/svarlamov/showdown.git",
-    "xmldom": "^0.1.27",
     "xmlserializer": "^0.6.1",
     "yargs": "^12.0.1"
   }
