@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"regexp"
 )
 
 type parserCtx struct {
@@ -31,6 +32,8 @@ type parserCtx struct {
 	n       int
 	swg     *sizedwaitgroup.SizedWaitGroup
 }
+
+var olxProblemChoiceHintsMdRegex = regexp.MustCompile(`(?s-i)<choicehint>.+?<\/choicehint>`)
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
 	rootCourseYAML, err := getIndexYAML(rootDir)
@@ -596,10 +599,14 @@ func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuest
 	}, nil
 }
 
+func olxStripHintsFromMD(md string) string {
+	return olxProblemChoiceHintsMdRegex.ReplaceAllString(md, "")
+}
+
 func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmodels.AnswerChoice, error) {
 	esc := make([]esmodels.AnswerChoice, 0, len(choices))
 	for ind, c := range choices {
-		txtMd, err := mdutils.MakeMD(c.InnerXML, "github")
+		txtMd, err := mdutils.MakeMD(olxStripHintsFromMD(c.InnerXML), "github")
 		if err != nil {
 			return nil, err
 		}
