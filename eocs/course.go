@@ -29,7 +29,7 @@ type parserCtx struct {
 	seqIdx  int
 	vertIdx int
 	n       int
-	swg *sizedwaitgroup.SizedWaitGroup
+	swg     *sizedwaitgroup.SizedWaitGroup
 }
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
@@ -49,7 +49,7 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 		seqIdx:  -1,
 		vertIdx: -1,
 		n:       0,
-		swg: &swgV,
+		swg:     &swgV,
 	}
 	err = filepath.Walk(rootDir, courseWalkFunc(rootDir, pcx))
 	if err != nil {
@@ -364,21 +364,21 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
 		Title:              esmodels.NewIntlStringWrapper(course.DisplayName, course.Language),
-		Description:        esmodels.NewIntlStringWrapper("TODO description", course.Language),
-		Headline:           esmodels.NewIntlStringWrapper("TODO headline", course.Language),
+		Description:        esmodels.NewIntlStringWrapper(course.GetExtraAttributes()["description"], course.Language),
+		Headline:           esmodels.NewIntlStringWrapper(course.GetExtraAttributes()["headline"], course.Language),
 		SubscriptionLevel:  1,
 		ViewCount:          0,
 		EnrolledCount:      0,
 		SkillLevel:         1,
 		EstMinutes:         3600,
-		PrimaryTopic:       "Java",
+		PrimaryTopic:       course.GetExtraAttributes()["primary_topic"],
 		CoverURL:           course.GetCourseImage(),
 		LogoURL:            course.GetCourseImage(),
 		IsPublished:        true,
-		InfoMD:             "TODO this needs to be converted into an intl string",
+		InfoMD:             esmodels.NewIntlStringWrapper(course.GetExtraAttributes()["info_md"], course.Language),
 		VerifiedCertCost:   200,
 		OrganizationIDs:    []string{},
-		Topics:             []string{"java"},
+		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 	}
 	units, exams, qs, vc, err := extractESFeatures(course)
 	if err != nil {
@@ -586,7 +586,7 @@ func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuest
 		return cqd, err
 	}
 	return esmodels.CodeQuestionData{
-		ID: bson.NewObjectId(),
+		ID:             bson.NewObjectId(),
 		APIVersion:     rpl.APIVersion,
 		EnvironmentKey: rpl.EnvironmentKey,
 		SrcFiles:       string(srcFilesJson),
@@ -628,7 +628,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)
-	section.Headline = esmodels.NewIntlStringWrapper("TODO headline", lang)
+	section.Headline = esmodels.NewIntlStringWrapper("Learn "+sequential.DisplayName, lang)
 	for idx, vert := range sequential.Verticals {
 		var contentBuf bytes.Buffer
 		var qBlks []*Block
@@ -712,7 +712,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 		card := esmodels.Card{
 			ID:          vert.URLName,
 			Title:       esmodels.NewIntlStringWrapper(vert.DisplayName, lang),
-			Headline:    esmodels.NewIntlStringWrapper("TODO headline", lang),
+			Headline:    esmodels.NewIntlStringWrapper("Learn "+vert.DisplayName, lang),
 			Index:       idx + 1,
 			ContentID:   vert.URLName + "_vc",
 			QuestionIDs: qids,
@@ -871,13 +871,18 @@ func exportBlock(rootDir string, index int, blk *Block) (err error) {
 }
 
 type Course struct {
-	URLName     string     `yaml:"url_name"`
-	DisplayName string     `yaml:"display_name"`
-	Org         string     `yaml:"org"`
-	CourseCode  string     `yaml:"course"`
-	CourseImage string     `yaml:"course_image"`
-	Language    string     `yaml:"language"`
-	Chapters    []*Chapter `yaml:"-"`
+	URLName      string     `yaml:"url_name"`
+	DisplayName  string     `yaml:"display_name"`
+	Org          string     `yaml:"org"`
+	CourseCode   string     `yaml:"course"`
+	CourseImage  string     `yaml:"course_image"`
+	Language     string     `yaml:"language"`
+	Headline     string     `yaml:"headline"`
+	Description  string     `yaml:"description"`
+	Topics       []string   `yaml:"topics,flow"`
+	PrimaryTopic string     `yaml:"primary_topic"`
+	InfoMD       string     `yaml:"info_md"`
+	Chapters     []*Chapter `yaml:"-"`
 }
 
 func (course *Course) GetDisplayName() string {
@@ -905,7 +910,13 @@ func (course *Course) GetLanguage() string {
 }
 
 func (course *Course) GetExtraAttributes() map[string]string {
-	return map[string]string{}
+	return map[string]string{
+		"info_md":       course.InfoMD,
+		"description":   course.Description,
+		"headline":      course.Headline,
+		"topics":        concatExtraAttrCSV(course.Topics),
+		"primary_topic": course.PrimaryTopic,
+	}
 }
 
 func (course *Course) GetChapters() []ir.Chapter {

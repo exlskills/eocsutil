@@ -20,7 +20,7 @@ type Course struct {
 	CoverURL           string            `bson:"cover_url"`
 	LogoURL            string            `bson:"logo_url"`
 	IsPublished        bool              `bson:"is_published"`
-	InfoMD             string            `bson:"info_md"`
+	InfoMD             IntlStringWrapper `bson:"info_md"`
 	VerifiedCertCost   float64           `bson:"verified_cert_cost"`
 	OrganizationIDs    []string          `bson:"organization_ids"`
 	Topics             []string          `bson:"topics"`

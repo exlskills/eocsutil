@@ -6,12 +6,13 @@ import (
 	"github.com/exlskills/eocsutil/eocs"
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/extfmt"
+	"github.com/exlskills/eocsutil/mdutils"
 	"github.com/exlskills/eocsutil/olx"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"strings"
-	"github.com/exlskills/eocsutil/mdutils"
+	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -44,6 +45,7 @@ func main() {
 func run() {
 	defer mdutils.GracefulTeardown()
 	go gracefulShutdown()
+	rand.Seed(time.Now().UnixNano())
 	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version("0.1").Author("EXL Inc.")
 	kingpin.CommandLine.Help = "EXL Open Courseware Standard - Utilities"
 	switch kingpin.Parse() {

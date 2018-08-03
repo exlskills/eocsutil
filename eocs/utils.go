@@ -68,3 +68,11 @@ func isIgnoredDir(name string) bool {
 	}
 	return false
 }
+
+func concatExtraAttrCSV(list []string) string {
+	return strings.Join(list, ",")
+}
+
+func extraAttrCSVToStrSlice(str string) []string {
+	return strings.Split(str, ",")
+}

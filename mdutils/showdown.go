@@ -1,21 +1,23 @@
 package mdutils
 
 import (
-	"os/exec"
-	"strings"
+	"bytes"
+	"encoding/json"
 	"github.com/exlskills/eocsutil/config"
-	"time"
 	"github.com/pkg/errors"
 	"net/http"
-	"bytes"
-			"encoding/json"
 	"os"
+	"os/exec"
+	"strings"
+	"time"
 )
 
 var Log = config.Cfg().GetLogger()
 var sdServerStartedAt = time.Now()
 var serverCmd *exec.Cmd
+
 const useREST = true
+
 var sdShutdown = false
 
 func init() {
