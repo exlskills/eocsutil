@@ -325,7 +325,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, q := range qs {
 		cInfo, err := db.C("question").UpsertId(q.ID, q)
 		if err != nil {
-			Log.Error("MongoDB error with 'question' object: %s", err.Error())
+			Log.Errorf("MongoDB error with 'question' object: %v, and error: %s", q, err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'question' changes: ", *cInfo)
@@ -334,7 +334,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, vc := range vcs {
 		cInfo, err := db.C("versioned_content").UpsertId(vc.ID, vc)
 		if err != nil {
-			Log.Error("MongoDB error with 'versioned_content' object: %s", err.Error())
+			Log.Errorf("MongoDB error with 'versioned_content' object: %v, and error: %s", vc, err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'versioned_content' changes: ", *cInfo)
@@ -343,7 +343,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	for _, ex := range exams {
 		cInfo, err := db.C("exam").UpsertId(ex.ID, ex)
 		if err != nil {
-			Log.Error("MongoDB error with 'exam' object: %s", err.Error())
+			Log.Errorf("MongoDB error with 'exam' object: %v, and error: %s", ex, err.Error())
 			return err
 		}
 		Log.Info("EXLskills 'exam' changes: ", *cInfo)
@@ -351,7 +351,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 
 	cInfo, err := db.C("course").UpsertId(esc.ID, esc)
 	if err != nil {
-		Log.Error("MongoDB error with 'course' object: %s", err.Error())
+		Log.Errorf("MongoDB error with 'course' object: %v, and error: %s", esc, err.Error())
 		return err
 	}
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
@@ -573,12 +573,25 @@ func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuest
 		Log.Errorf("Invalid problem shebang. Got %s for repl %v", ans, *rpl)
 		return cqd, errors.New("stringresponse problem invalid answer shebang (#!)")
 	}
+	srcFilesJson, err := json.Marshal(rpl.SrcFiles)
+	if err != nil {
+		return cqd, err
+	}
+	tmplFilesJson, err := json.Marshal(rpl.TmplFiles)
+	if err != nil {
+		return cqd, err
+	}
+	testFilesJson, err := json.Marshal(rpl.TestFiles)
+	if err != nil {
+		return cqd, err
+	}
 	return esmodels.CodeQuestionData{
+		ID: bson.NewObjectId(),
 		APIVersion:     rpl.APIVersion,
 		EnvironmentKey: rpl.EnvironmentKey,
-		SrcFiles:       rpl.SrcFiles,
-		TestFiles:      rpl.TestFiles,
-		TmplFiles:      rpl.TmplFiles,
+		SrcFiles:       string(srcFilesJson),
+		TestFiles:      string(testFilesJson),
+		TmplFiles:      string(tmplFilesJson),
 	}, nil
 }
 
