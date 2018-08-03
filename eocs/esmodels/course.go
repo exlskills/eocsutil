@@ -24,6 +24,7 @@ type Course struct {
 	VerifiedCertCost   float64           `bson:"verified_cert_cost"`
 	OrganizationIDs    []string          `bson:"organization_ids"`
 	Topics             []string          `bson:"topics"`
+	RepoURL            string            `bson:"repo_url"`
 	CreatedAt          time.Time         `bson:"created_at"`
 	UpdatedAt          time.Time         `bson:"updated_at"`
 }

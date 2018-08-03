@@ -379,6 +379,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		VerifiedCertCost:   200,
 		OrganizationIDs:    []string{},
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
+		RepoURL:            course.GetExtraAttributes()["repo_url"],
 	}
 	units, exams, qs, vc, err := extractESFeatures(course)
 	if err != nil {
@@ -882,6 +883,7 @@ type Course struct {
 	Topics       []string   `yaml:"topics,flow"`
 	PrimaryTopic string     `yaml:"primary_topic"`
 	InfoMD       string     `yaml:"info_md"`
+	RepoURL      string     `yaml:"repo_url"`
 	Chapters     []*Chapter `yaml:"-"`
 }
 
@@ -916,6 +918,7 @@ func (course *Course) GetExtraAttributes() map[string]string {
 		"headline":      course.Headline,
 		"topics":        concatExtraAttrCSV(course.Topics),
 		"primary_topic": course.PrimaryTopic,
+		"repo_url":      course.RepoURL,
 	}
 }
 
