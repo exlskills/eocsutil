@@ -3,6 +3,7 @@ package eocs
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/exlskills/eocsutil/eocs/esmodels"
@@ -18,10 +19,10 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
-	"regexp"
 )
 
 type parserCtx struct {
@@ -389,7 +390,6 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		return
 	}
 	esc.Units = esmodels.UnitsWrapper{
-		// TODO double-check that this can be reset each load... I don't believe that it's really ever used
 		ID:    esmodels.ESID(),
 		Units: units,
 	}
@@ -413,7 +413,7 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
-	unit.Headline = esmodels.NewIntlStringWrapper("TODO unit headline", lang)
+	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
 	unit.Index = chap.Index + 1
 	unit.FinalExamWeightPct = (1 / float64(nChaps)) * 100
 	unit.AttemptsAllowedPerDay = 2
@@ -525,7 +525,6 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 						DocID: sectID,
 						Level: "section",
 					},
-					// TODO double-check that the GQL server is okay without having a card ref here... Technically final exam questions may not have one
 				},
 			},
 		},
@@ -572,7 +571,6 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 
 // olxStrRespToESQCodeData ans field represents the shebang (#!) that points us to the REPL configuration
 func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuestionData, err error) {
-	// TODO don't hard-code this... But for now we need to check that this question has been deliberately formatted
 	if !isValidProblemREPLShebang(ans) {
 		Log.Errorf("Invalid problem shebang. Got %s for repl %v", ans, *rpl)
 		return cqd, errors.New("stringresponse problem invalid answer shebang (#!)")
@@ -682,7 +680,15 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 					}
 					testStr = string(b)
 				}
-				contentBuf.WriteString(fmt.Sprintf(`<div class="exlcode-embedded-repl" data-repl-src="%s" data-repl-test="%s" data-repl-tmpl="%s" width="100%%" height="500px"></div>`, srcStr, testStr, tmplStr))
+				replBlkBytes, err := xml.Marshal(EXLcodeEmbeddedREPLBlock{
+					Src:  srcStr,
+					Test: testStr,
+					Tmpl: tmplStr,
+				})
+				if err != nil {
+					return section, nil, nil, err
+				}
+				contentBuf.Write(replBlkBytes)
 				contentBuf.WriteString("\n")
 			} else if blk.BlockType == "html" {
 				mdContent, err := blk.GetContentMD()
