@@ -5,6 +5,7 @@ import (
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/ir"
 	"os"
+	"errors"
 )
 
 var Log = config.Cfg().GetLogger()
@@ -48,5 +49,9 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 		return err
 	}
 	Log.Info("Course import complete!")
-	return upsertCourseRecursive(course, toUri, "webph2_dev")
+	dbName := os.Getenv("MGO_DB_NAME")
+	if dbName == "" {
+		return errors.New("for EOCS course conversion the MGO_DB_NAME environment variable must be set to the name of the MongoDB database to write to")
+	}
+	return upsertCourseRecursive(course, toUri, dbName)
 }
