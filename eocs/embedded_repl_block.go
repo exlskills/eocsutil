@@ -1,10 +1,10 @@
 package eocs
 
 import (
-	"encoding/xml"
 	"bytes"
+	"encoding/xml"
 	"net/url"
-	)
+)
 
 type EXLcodeEmbeddedREPLBlock struct {
 	XMLName xml.Name `xml:"div"`
@@ -24,15 +24,14 @@ func (repl *EXLcodeEmbeddedREPLBlock) GetEmbedURL() string {
 func (repl *EXLcodeEmbeddedREPLBlock) IFrame() (b []byte, err error) {
 	return xml.Marshal(EXLcodeEmbeddedREPLIFrame{
 		SrcURL: repl.GetEmbedURL(),
-		Width: "100%",
+		Width:  "100%",
 		Height: "500px",
 	})
 }
 
-
 type EXLcodeEmbeddedREPLIFrame struct {
 	XMLName xml.Name `xml:"iframe"`
-	SrcURL     string   `xml:"src,attr,omitempty"`
+	SrcURL  string   `xml:"src,attr,omitempty"`
 	Width   string   `xml:"width,attr,omitempty"`
 	Height  string   `xml:"height,attr,omitempty"`
 }

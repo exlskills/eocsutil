@@ -1,11 +1,11 @@
 package eocs
 
 import (
+	"errors"
 	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/ir"
 	"os"
-	"errors"
 )
 
 var Log = config.Cfg().GetLogger()

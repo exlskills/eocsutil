@@ -3,7 +3,7 @@ package eocs
 import (
 	"bytes"
 	"encoding/json"
-		"errors"
+	"errors"
 	"fmt"
 	"github.com/exlskills/eocsutil/eocs/esmodels"
 	"github.com/exlskills/eocsutil/ir"
@@ -33,7 +33,7 @@ type parserCtx struct {
 	swg     *sizedwaitgroup.SizedWaitGroup
 }
 
-var olxProblemChoiceHintsMdRegex = regexp.MustCompile(`(?s-i)<choicehint>.+?<\/choicehint>`)
+var olxProblemChoiceHintsMdRegex = regexp.MustCompile(`(?s-i)<choicehint.+?<\/choicehint>`)
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
 	rootCourseYAML, err := getIndexYAML(rootDir)
@@ -648,7 +648,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				)
 				if blk.REPL.SrcFiles != nil {
 					b, err := json.Marshal(wsenv.Workspace{
-						Id: esmodels.ESID(),
+						Id:             esmodels.ESID(),
 						Name:           blk.DisplayName,
 						EnvironmentKey: blk.REPL.EnvironmentKey,
 						Files:          blk.REPL.SrcFiles,
@@ -660,7 +660,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				}
 				if blk.REPL.TmplFiles != nil {
 					b, err := json.Marshal(wsenv.Workspace{
-						Id: esmodels.ESID(),
+						Id:             esmodels.ESID(),
 						Name:           blk.DisplayName,
 						EnvironmentKey: blk.REPL.EnvironmentKey,
 						Files:          blk.REPL.TmplFiles,
@@ -672,7 +672,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				}
 				if blk.REPL.TestFiles != nil {
 					b, err := json.Marshal(wsenv.Workspace{
-						Id: esmodels.ESID(),
+						Id:             esmodels.ESID(),
 						Name:           blk.DisplayName,
 						EnvironmentKey: blk.REPL.EnvironmentKey,
 						Files:          blk.REPL.TestFiles,
