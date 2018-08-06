@@ -711,6 +711,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				Log.Error(err)
 				return section, nil, nil, err
 			}
+			ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs = append(ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs, esmodels.EmbeddedDocRef{DocID: vert.URLName, Level: "card"})
 			qids = append(qids, ques.ID)
 			qs = append(qs, ques)
 		}
