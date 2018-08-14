@@ -3,7 +3,7 @@ package wsenv
 import (
 	"encoding/json"
 	"errors"
-		"io/ioutil"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
