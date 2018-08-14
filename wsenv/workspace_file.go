@@ -3,8 +3,7 @@ package wsenv
 import (
 	"encoding/json"
 	"errors"
-	"exlgit.com/nva/ecmd/utils"
-	"io/ioutil"
+		"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,7 +119,7 @@ func (wf *WorkspaceFile) RemoveFromSystemAndDrop(isSudoMode bool, wspc *Workspac
 				if depth == outerInd+1 {
 					delete(curFileArr, curFile.Name)
 					if curFile.IsDir {
-						return utils.RemoveDirectoryContentsRecursively(fullPath)
+						return removeDirectoryContentsRecursively(fullPath)
 					} else {
 						return os.Remove(fullPath)
 					}
@@ -202,6 +201,25 @@ func (wf *WorkspaceFile) ValidateNameAndStructure() error {
 func basicFileNameCheck(pathToCheck string) error {
 	if pathToCheck == "" || pathToCheck == "." || strings.Contains(pathToCheck, "..") || strings.Contains(pathToCheck, "...") {
 		return ErrInvalidWorkspaceFileName
+	}
+	return nil
+}
+
+func removeDirectoryContentsRecursively(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

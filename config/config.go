@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"exlgit.com/golang/utils/envconfig"
+	"github.com/exlinc/golang-utils/envconfig"
 	"github.com/sirupsen/logrus"
 )
 

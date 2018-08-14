@@ -23,16 +23,28 @@
 
 [[constraint]]
   branch = "master"
-  name = "exlgit.com/golang/utils"
+  name = "github.com/exlinc/golang-utils"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/globalsign/mgo"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/remeh/sizedwaitgroup"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
-  version = "1.0.5"
+  version = "1.0.6"
 
 [[constraint]]
   name = "gopkg.in/alecthomas/kingpin.v2"
   version = "2.2.6"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/globalsign/mgo"
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
