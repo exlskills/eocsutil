@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -363,6 +364,11 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 }
 
 func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+	estMinutes, err := strconv.Atoi(course.GetExtraAttributes()["est_minutes"])
+	if err != nil {
+		// Note this is just a sensible default, I don't believe that est_minutes should crash a course conversion
+		estMinutes = 600
+	}
 	esc = &esmodels.Course{
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
@@ -373,7 +379,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		ViewCount:          0,
 		EnrolledCount:      0,
 		SkillLevel:         1,
-		EstMinutes:         3600,
+		EstMinutes:         estMinutes,
 		PrimaryTopic:       course.GetExtraAttributes()["primary_topic"],
 		CoverURL:           course.GetCourseImage(),
 		LogoURL:            course.GetCourseImage(),
@@ -901,6 +907,7 @@ type Course struct {
 	PrimaryTopic string     `yaml:"primary_topic"`
 	InfoMD       string     `yaml:"info_md"`
 	RepoURL      string     `yaml:"repo_url"`
+	EstMinutes   int        `yaml:"est_minutes"`
 	Chapters     []*Chapter `yaml:"-"`
 }
 
@@ -936,6 +943,7 @@ func (course *Course) GetExtraAttributes() map[string]string {
 		"topics":        concatExtraAttrCSV(course.Topics),
 		"primary_topic": course.PrimaryTopic,
 		"repo_url":      course.RepoURL,
+		"est_minutes":   strconv.Itoa(course.EstMinutes),
 	}
 }
 
