@@ -60,9 +60,8 @@ func (repl *BlockREPL) LoadFilesFromFS(rootDir string) error {
 	if repl.TestPath != "" {
 		files, err := loadFilesFromFSForEnv(repl.EnvironmentKey, filepath.Join(rootDir, repl.TestPath))
 		if err != nil {
-			// TODO make this fatal later...
-			Log.Warn("Unable to load test directory, despite a path being supplied...")
-			//return err
+			Log.Error("Unable to load test directory, despite a path being supplied. Exiting.")
+			return err
 		}
 		repl.TestFiles = files
 	}
