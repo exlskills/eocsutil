@@ -25,8 +25,8 @@ go build # Optional, but this will validate that you have the correct golang dep
 
 ### Assumptions
 
-+ EOCS - formatted course files are located on the machine's file system  
-+ Target MongoDB is running locally (for a production/remote configuration, refer to your sysadmin/internal guides to get the mongodb connection URI) (For MongoDB Atlas, use the 3.4 connection URI)
++ EOCS-formatted course files are placed on the file system  
++ Target MongoDB is running locally (for a production/remote configuration, refer to your sysadmin/internal guides to get the mongodb connection URI; for MongoDB Atlas, use the 3.4 connection URI)
 
 ```
 export MGO_DB_NAME="<name of the MongoDB target database>"
