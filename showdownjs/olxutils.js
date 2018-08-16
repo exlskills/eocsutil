@@ -194,6 +194,7 @@ var markdownToXml = function(markdown) {
             return result;
         });
 
+        // TODO propogate this multi-line awesomeness to other question types
         xml = xml.replace(/(^\s*\+\(.{0,3}\)(\n|.(?<!\-\(.{0,3}\)\-))*$\n*)+/gm, function(match) {
             var choices = '',
                 shuffle = false,
@@ -235,7 +236,6 @@ var markdownToXml = function(markdown) {
             result += '</multiplechoiceresponse>\n\n';
             return result;
         });
-        // TODO after this make sure to replace any line that is like -(...
 
         // group check answers
         // [.] with {{...}} lines mixed in
