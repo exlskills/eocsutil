@@ -14,7 +14,7 @@ Command-line tool and GoLang API for working with EOCS and OLX courseware. This 
 
 ```
 # Prior to running `go get`, make sure that you have setup Go with the $GOPATH environment variable, otherwise this will not work
-go get github.com/exlskills/eocsutil
+go get -u github.com/exlskills/eocsutil
 cd $GOPATH/src/github.com/exlskills/eocsutil
 dep ensure -v
 yarn install
