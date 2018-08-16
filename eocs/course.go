@@ -501,7 +501,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 			return nil, err
 		}
 		qLabel = esmodels.NewIntlStringWrapper(labelMd, lang)
-		qData, err = olxStrRespToESQCodeData(olxProblem.StringResponse.Answer, rpl)
+		qData, err = olxStrRespToESQCodeData(lang, olxProblem.StringResponse.Answer, rpl)
 		if err != nil {
 			return nil, err
 		}
@@ -575,7 +575,7 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 }
 
 // olxStrRespToESQCodeData ans field represents the shebang (#!) that points us to the REPL configuration
-func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuestionData, err error) {
+func olxStrRespToESQCodeData(lang, ans string, rpl *BlockREPL) (cqd esmodels.CodeQuestionData, err error) {
 	if !isValidProblemREPLShebang(ans) {
 		Log.Errorf("Invalid problem shebang. Got %s for repl %v", ans, *rpl)
 		return cqd, errors.New("stringresponse problem invalid answer shebang (#!)")
@@ -592,13 +592,23 @@ func olxStrRespToESQCodeData(ans string, rpl *BlockREPL) (cqd esmodels.CodeQuest
 	if err != nil {
 		return cqd, err
 	}
+	gradingTestsJson, err := json.Marshal(rpl.Tests)
+	if err != nil {
+		return cqd, err
+	}
+	strategy := "default"
+	if rpl.GradingStrategy != "" {
+		strategy = rpl.GradingStrategy
+	}
 	return esmodels.CodeQuestionData{
-		ID:             bson.NewObjectId(),
-		APIVersion:     rpl.APIVersion,
-		EnvironmentKey: rpl.EnvironmentKey,
-		SrcFiles:       string(srcFilesJson),
-		TestFiles:      string(testFilesJson),
-		TmplFiles:      string(tmplFilesJson),
+		ID:              bson.NewObjectId(),
+		APIVersion:      rpl.APIVersion,
+		EnvironmentKey:  rpl.EnvironmentKey,
+		SrcFiles:        esmodels.NewIntlStringWrapper(string(srcFilesJson), lang),
+		TestFiles:       string(testFilesJson),
+		TmplFiles:       esmodels.NewIntlStringWrapper(string(tmplFilesJson), lang),
+		GradingStrategy: strategy,
+		GradingTests:    string(gradingTestsJson),
 	}, nil
 }
 
