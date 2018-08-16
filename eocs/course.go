@@ -537,6 +537,8 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 		Tags:            []string{},
 		Points:          1,
 		ComplexityLevel: 1,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 	return q, nil
 }

@@ -1,5 +1,7 @@
 package esmodels
 
+import "time"
+
 type Question struct {
 	ID              string            `bson:"id"`
 	Data            interface{}       `bson:"data"`
@@ -11,4 +13,6 @@ type Question struct {
 	Tags            []string          `bson:"tags"`
 	DocRef          DocRef            `bson:"doc_ref"`
 	Hint            IntlStringWrapper `bson:"hint"`
+	CreatedAt       time.Time         `bson:"created_at"`
+	UpdatedAt       time.Time         `bson:"updated_at"`
 }

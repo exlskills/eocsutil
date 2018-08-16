@@ -25,6 +25,8 @@ func NewIntlStringWrapper(str, locale string) IntlStringWrapper {
 				Content:   str,
 				IsDefault: true,
 				Locale:    locale,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			},
 		},
 	}
