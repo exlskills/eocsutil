@@ -194,6 +194,49 @@ var markdownToXml = function(markdown) {
             return result;
         });
 
+        xml = xml.replace(/(^\s*\+\(.{0,3}\)(\n|.(?<!\-\(.{0,3}\)\-))*$\n*)+/gm, function(match) {
+            var choices = '',
+                shuffle = false,
+                // @svarlamov, originally this was splitting by \n
+                options = match.split(/(^\s*\+\(.{0,3}\)(\n|.(?<!\-\(.{0,3}\)))*$\n*)+/gm),
+                value, inparens, correct,
+                fixed, hint, result;
+            for (i = 0; i < options.length; i++) {
+                options[i] = options[i].trim();                   // trim off leading/trailing whitespace
+                options[i] = options[i].replace(/^\s*-\(.{0,3}\)\s*/, '');
+                if (options[i].length > 0) {
+                    value = options[i].split(/^\s*\+\(.{0,3}\)\s*/)[1];
+                    inparens = /^\s*\+\((.{0,3})\)\s*/.exec(options[i])[1];
+                    correct = /x/i.test(inparens);
+                    fixed = '';
+                    if (/@/.test(inparens)) {
+                        fixed = ' fixed="true"';
+                    }
+                    if (/!/.test(inparens)) {
+                        shuffle = true;
+                    }
+
+                    hint = extractHint(value);
+                    if (hint.hint) {
+                        value = hint.nothint;
+                        value = value + ' <choicehint' + hint.labelassign + '>' + hint.hint + '</choicehint>';
+                    }
+                    choices += '    <choice correct="' + correct + '"' + fixed + '>' + value + '</choice>\n';
+                }
+            }
+            result = '<multiplechoiceresponse>\n';
+            if (shuffle) {
+                result += '  <choicegroup type="MultipleChoice" shuffle="true">\n';
+            } else {
+                result += '  <choicegroup type="MultipleChoice">\n';
+            }
+            result += choices;
+            result += '  </choicegroup>\n';
+            result += '</multiplechoiceresponse>\n\n';
+            return result;
+        });
+        // TODO after this make sure to replace any line that is like -(...
+
         // group check answers
         // [.] with {{...}} lines mixed in
         xml = xml.replace(/(^\s*((\[.?\])|({{.*?}})).*?$\n*)+/gm, function(match) {
