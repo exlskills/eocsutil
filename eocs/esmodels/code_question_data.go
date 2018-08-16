@@ -13,4 +13,5 @@ type CodeQuestionData struct {
 	TestFiles       string            `json:"tmpl_files" bson:"tmpl_files"`
 	GradingStrategy string            `json:"grading_strategy" bson:"grading_strategy"`
 	GradingTests    string            `json:"grading_tests" bson:"grading_tests"`
+	Explanation     IntlStringWrapper `bson:"explanation"`
 }

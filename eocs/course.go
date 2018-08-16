@@ -611,6 +611,7 @@ func olxStrRespToESQCodeData(lang, ans string, rpl *BlockREPL) (cqd esmodels.Cod
 		TmplFiles:       esmodels.NewIntlStringWrapper(string(tmplFilesJson), lang),
 		GradingStrategy: strategy,
 		GradingTests:    string(gradingTestsJson),
+		Explanation:     esmodels.NewIntlStringWrapper(rpl.Explanation, lang),
 	}, nil
 }
 
