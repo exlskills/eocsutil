@@ -711,14 +711,14 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 					return section, nil, nil, err
 				}
 				contentBuf.Write(replBlkBytes)
-				contentBuf.WriteString("\n")
+				contentBuf.WriteString("\n\n")
 			} else if blk.BlockType == "html" {
 				mdContent, err := blk.GetContentMD()
 				if err != nil {
 					return section, nil, nil, err
 				}
 				contentBuf.WriteString(mdContent)
-				contentBuf.WriteString("\n")
+				contentBuf.WriteString("\n\n")
 			} else {
 				return section, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
 			}
