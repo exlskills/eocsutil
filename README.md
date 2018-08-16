@@ -14,7 +14,7 @@ Command-line tool and GoLang API for working with EOCS and OLX courseware. This 
 
 ```
 # Prior to running `go get`, make sure that you have setup Go with the $GOPATH environment variable, otherwise this will not work
-go get github.com/exlskills/eocsutil
+go get -u github.com/exlskills/eocsutil
 cd $GOPATH/src/github.com/exlskills/eocsutil
 dep ensure -v
 yarn install
@@ -25,8 +25,8 @@ go build # Optional, but this will validate that you have the correct golang dep
 
 ### Assumptions
 
-+ EOCS - formatted course files are located on the machine's file system  
-+ Target MongoDB is running locally (for a production/remote configuration, refer to your sysadmin/internal guides to get the mongodb connection URI) (For MongoDB Atlas, use the 3.4 connection URI)
++ EOCS-formatted course files are placed on the file system  
++ Target MongoDB is running locally (for a production/remote configuration, refer to your sysadmin/internal guides to get the mongodb connection URI; for MongoDB Atlas, use the 3.4 connection URI)
 
 ```
 export MGO_DB_NAME="<name of the MongoDB target database>"
