@@ -463,20 +463,12 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 	}
 	var qHint esmodels.IntlStringWrapper
 	if olxProblem.DemandHint != nil {
-		hintMD, err := mdutils.MakeMD(olxProblem.DemandHint.Hint, "github")
-		if err != nil {
-			return nil, err
-		}
-		qHint = esmodels.NewIntlStringWrapper(hintMD, lang)
+		qHint = esmodels.NewIntlStringWrapper(olxProblem.DemandHint.Hint, lang)
 	}
 	if olxProblem.MultipleChoiceResponse != nil {
 		qEstSecs = 60
 		qType = esmodels.ESTypeFromOLXType("multiplechoiceresponse")
-		labelMd, err := mdutils.MakeMD(olxProblem.MultipleChoiceResponse.Label.InnerXML, "github")
-		if err != nil {
-			return nil, err
-		}
-		qLabel = esmodels.NewIntlStringWrapper(labelMd, lang)
+		qLabel = esmodels.NewIntlStringWrapper(olxProblem.MultipleChoiceResponse.Label.InnerXML, lang)
 		qData, err = olxChoicesToESQDataArr(olxProblem.MultipleChoiceResponse.ChoiceGroup.Choices, lang)
 		if err != nil {
 			return nil, err
@@ -484,11 +476,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 	} else if olxProblem.ChoiceResponse != nil {
 		qEstSecs = 60
 		qType = esmodels.ESTypeFromOLXType("choiceresponse")
-		labelMd, err := mdutils.MakeMD(olxProblem.ChoiceResponse.Label.InnerXML, "github")
-		if err != nil {
-			return nil, err
-		}
-		qLabel = esmodels.NewIntlStringWrapper(labelMd, lang)
+		qLabel = esmodels.NewIntlStringWrapper(olxProblem.ChoiceResponse.Label.InnerXML, lang)
 		qData, err = olxChoicesToESQDataArr(olxProblem.ChoiceResponse.CheckboxGroup.Choices, lang)
 		if err != nil {
 			return nil, err
@@ -496,11 +484,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 	} else if olxProblem.StringResponse != nil {
 		qEstSecs = 60 * 5
 		qType = esmodels.ESTypeFromOLXType("stringresponse")
-		labelMd, err := mdutils.MakeMD(olxProblem.StringResponse.Label.InnerXML, "github")
-		if err != nil {
-			return nil, err
-		}
-		qLabel = esmodels.NewIntlStringWrapper(labelMd, lang)
+		qLabel = esmodels.NewIntlStringWrapper(olxProblem.StringResponse.Label.InnerXML, lang)
 		qData, err = olxStrRespToESQCodeData(lang, olxProblem.StringResponse.Answer, rpl)
 		if err != nil {
 			return nil, err
