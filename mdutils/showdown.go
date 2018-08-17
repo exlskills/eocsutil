@@ -116,6 +116,8 @@ func MakeMD(html, flavor string) (md string, err error) {
 
 func runShowdownServerP() {
 	args := []string{
+		// We need this harmony flag for regex negative lookbehind support
+		"--harmony",
 		"showdownjs/server.js",
 	}
 	serverCmd = exec.Command("node", args...)
@@ -130,6 +132,8 @@ func runShowdownServerP() {
 
 func execShowdown(subCmd, flavor, input string) (output string, err error) {
 	args := []string{
+		// We need this harmony flag for regex negative lookbehind support
+		"--harmony",
 		"showdownjs",
 		subCmd,
 		"-m",

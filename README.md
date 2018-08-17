@@ -38,7 +38,7 @@ go run main.go convert --from-format eocs --from-uri <path to the course files f
 
 ### I'm getting errors about showdownjs
 
-Sometimes there's an issue with showdownjs nodejs service that eocsutil spawns for markdown<->html conversion not exiting after eocsutil exits. If this occurs, run `ps -ax | grep "node showdownjs/server.js"` and `kill` that process.
+Sometimes there's an issue with showdownjs nodejs service that eocsutil spawns for markdown<->html conversion not exiting after eocsutil exits. If this occurs, run `ps -ax | grep "node --harmony showdownjs/server.js"` and `kill` that process.
 
 ### Showdownjs port conflict
 
