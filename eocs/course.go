@@ -586,6 +586,14 @@ func olxStrRespToESQCodeData(lang, ans string, rpl *BlockREPL) (cqd esmodels.Cod
 	if rpl.GradingStrategy != "" {
 		strategy = rpl.GradingStrategy
 	}
+	explWspcBytes, err := json.Marshal(wsenv.Workspace{Id: esmodels.ESID(), EnvironmentKey: rpl.EnvironmentKey, Files: rpl.SrcFiles})
+	if err != nil {
+		return cqd, err
+	}
+	explanation, err := generateCodeQuestionExplanationMD(rpl.Explanation, string(explWspcBytes))
+	if err != nil {
+		return cqd, err
+	}
 	return esmodels.CodeQuestionData{
 		ID:              bson.NewObjectId(),
 		APIVersion:      rpl.APIVersion,
@@ -595,8 +603,23 @@ func olxStrRespToESQCodeData(lang, ans string, rpl *BlockREPL) (cqd esmodels.Cod
 		TmplFiles:       esmodels.NewIntlStringWrapper(string(tmplFilesJson), lang),
 		GradingStrategy: strategy,
 		GradingTests:    string(gradingTestsJson),
-		Explanation:     esmodels.NewIntlStringWrapper(rpl.Explanation, lang),
+		Explanation:     esmodels.NewIntlStringWrapper(explanation, lang),
 	}, nil
+}
+
+func generateCodeQuestionExplanationMD(explStr, srcWorkspace string) (string, error) {
+	buf := bytes.NewBufferString("")
+	if explStr != "" {
+		buf.WriteString(explStr)
+		buf.WriteString("\n\n")
+	}
+	embeddedBlock := EXLcodeEmbeddedREPLBlock{Src: srcWorkspace}
+	iframeBytes, err := embeddedBlock.IFrame()
+	if err != nil {
+		return "", err
+	}
+	buf.Write(iframeBytes)
+	return buf.String(), nil
 }
 
 func olxStripHintsFromMD(md string) string {
