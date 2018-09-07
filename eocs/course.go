@@ -92,13 +92,10 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			pcx.vertIdx = -1
 			pcx.seqIdx = -1
 			pcx.chapIdx++
-			var chap *Chapter
-			idx, dispName, err := indexAndNameFromConcatenated(base)
+			chap := &Chapter{}
+			_, dispName, err := indexAndNameFromConcatenated(base)
 			if err != nil {
 				return err
-			}
-			if pcx.chapIdx != idx {
-				return errors.New("invalid chapter directory index prefix")
 			}
 			if indxBytes, err := getIndexYAML(path); err == nil {
 				err = yaml.Unmarshal(indxBytes, &chap)
@@ -129,13 +126,10 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			// Create a new sequential
 			pcx.vertIdx = -1
 			pcx.seqIdx++
-			var seq *Sequential
-			idx, dispName, err := indexAndNameFromConcatenated(base)
+			seq := &Sequential{}
+			_, dispName, err := indexAndNameFromConcatenated(base)
 			if err != nil {
 				return err
-			}
-			if pcx.seqIdx != idx {
-				return errors.New("invalid sequential directory index prefix")
 			}
 			if indxBytes, err := getIndexYAML(path); err == nil {
 				err = yaml.Unmarshal(indxBytes, &seq)
@@ -164,15 +158,12 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 		} else if len(pathParts) == 3 {
 			// Create an index a new vertical
 			pcx.vertIdx++
-			var vert *Vertical
-			idx, dispName, err := indexAndNameFromConcatenated(base)
+			vert := &Vertical{}
+			_, dispName, err := indexAndNameFromConcatenated(base)
 			if err != nil {
 				return err
 			}
 			Log.Info("Adding vertical: ", dispName)
-			if pcx.vertIdx != idx {
-				return errors.New("invalid vertical directory index prefix")
-			}
 			if indxBytes, err := getIndexYAML(path); err == nil {
 				err = yaml.Unmarshal(indxBytes, &vert)
 				if err != nil {
