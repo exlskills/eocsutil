@@ -7,8 +7,13 @@ var $ = require("jquery")(new JSDOM().window);
 var markdownToXml = function(markdown) {
     var demandHintTags = [],
         finalDemandHints, finalXml, responseTypesMarkdown, responseTypesXML, toXml;
+
+    escapeInnerMD = function(inner) {
+        return inner.replace(/(?<=`.*)(&)(?=.*`)/g, '&amp;').replace(/(?<=`.*)(<)(?=.*`)/g, '&lt;').replace(/(?<=`.*)(>)(?=.*`)/g, '&gt;').replace(/(?<=```.*)(&)(?=.*```)/gms, '&amp;').replace(/(?<=```.*)(<)(?=.*```)/gms, '&lt;').replace(/(?<=```.*)(>)(?=.*```)/gms, '&gt;');
+    }
+
     toXml = function(partialMarkdown) {
-        var xml = partialMarkdown,
+        var xml = escapeInnerMD(partialMarkdown),
             i, splits, makeParagraph, serializer, responseType, $xml, responseTypesSelector,
             inputtype, beforeInputtype, extractHint, demandhints;
         var responseTypes = [

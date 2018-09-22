@@ -14,6 +14,12 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  name = "github.com/dlclark/regexp2"
+  packages = [".","syntax"]
+  revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
+  version = "v1.1.6"
+
+[[projects]]
   branch = "master"
   name = "github.com/exlinc/golang-utils"
   packages = ["envconfig"]
@@ -70,6 +76,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4f1b36891fb6f61b7fb389931ad7bdcc3efdac89984a3a8f95f89007c032e3e"
+  inputs-digest = "760c603938cc9db24aeb7d02edae70b93593bf79e6e1584a178baf75b395097f"
   solver-name = "gps-cdcl"
   solver-version = 1
