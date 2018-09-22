@@ -59,6 +59,7 @@ var ignoredDirs = map[string]struct{}{
 	".git": {},
 	".hg":  {},
 	".bzr": {},
+	".idea": {},
 	".":    {},
 }
 
