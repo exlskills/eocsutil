@@ -448,6 +448,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 	if err != nil {
 		return nil, err
 	}
+	Log.Info(probMD)
 	olxProblem, err := olxproblems.NewProblemFromMD(probMD)
 	if err != nil {
 		return nil, err
@@ -481,7 +482,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 			return nil, err
 		}
 	} else {
-		return nil, errors.New("invalid olx problem type")
+		return nil, errors.New(fmt.Sprintf("invalid olx problem type: %s", olxProblem.XMLName.Local))
 	}
 	q := &esmodels.Question{
 		ID:           quesID,
@@ -529,7 +530,7 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 	for _, vert := range sequential.Verticals {
 		var qBlk *Block
 		if len(vert.Blocks) != 1 {
-			return nil, nil, errors.New("final exam vertical should have exactly one block (a problem block)")
+			return nil, nil, errors.New(fmt.Sprintf("final exam vertical should have exactly one block (a problem block) (Vertical ID: %s)", vert.URLName))
 		}
 		for _, b := range vert.Blocks {
 			if b.BlockType == "problem" {

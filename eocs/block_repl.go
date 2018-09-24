@@ -107,6 +107,10 @@ func loadFilesFromFSForEnv(envKey, dir string) (files map[string]*wsenv.Workspac
 			},
 		}
 		return
+	case "python_2_7_free":
+		return fillinFiles, nil
+	case "python_3_4_free":
+		return fillinFiles, nil
 	default:
 		// This is essentially just what we get directly from the FS
 		return fillinFiles, nil
