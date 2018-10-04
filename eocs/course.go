@@ -376,7 +376,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		LogoURL:            course.GetCourseImage(),
 		IsPublished:        true,
 		InfoMD:             esmodels.NewIntlStringWrapper(course.GetExtraAttributes()["info_md"], course.Language),
-		VerifiedCertCost:   200,
+		VerifiedCertCost:   30,
 		OrganizationIDs:    []string{},
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 		RepoURL:            course.GetExtraAttributes()["repo_url"],
