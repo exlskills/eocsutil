@@ -49,9 +49,8 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 		return err
 	}
 	Log.Info("Course import complete!")
-	dbName := os.Getenv("MGO_DB_NAME")
-	if dbName == "" {
+	if config.Cfg().MgoDBName == "" {
 		return errors.New("for EOCS course conversion the MGO_DB_NAME environment variable must be set to the name of the MongoDB database to write to")
 	}
-	return upsertCourseRecursive(course, toUri, dbName)
+	return upsertCourseRecursive(course, toUri, config.Cfg().MgoDBName)
 }

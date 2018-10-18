@@ -6,6 +6,7 @@ import (
 	"github.com/exlskills/eocsutil/eocs"
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/extfmt"
+	"github.com/exlskills/eocsutil/ghserver"
 	"github.com/exlskills/eocsutil/mdutils"
 	"github.com/exlskills/eocsutil/olx"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -18,6 +19,7 @@ import (
 )
 
 var (
+	serveGitHubHooks  = kingpin.Command("serve-gh-hook", "Serve GitHub course update hooks to auto-update courses")
 	convertCmd        = kingpin.Command("convert", "Convert a course from one supported format to another")
 	convertForce      = convertCmd.Flag("force", "Ignore if the destination already exists, just write the files/folders").Default("false").Bool()
 	convertFromFormat = convertCmd.Flag("from-format", "The source format to convert from").Required().String()
@@ -79,6 +81,10 @@ func run() {
 			return
 		}
 		Log.Infof("Successfully verified course: %s", ir.GetDisplayName())
+		return
+	case "serve-gh-hook":
+		Log.Info("Serve GitHub Hooks ...")
+		ghserver.ServeGH()
 		return
 	default:
 		Log.Fatal("Unknown command")
