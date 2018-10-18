@@ -24,6 +24,9 @@ COPY --from=gobuilder /go/src/github.com/exlskills/eocsutil/vendor/ ./vendor/
 
 RUN yarn install
 
+ENTRYPOINT ["/go/src/github.com/exlskills/eocsutil/eocsutil"]
+CMD ["serve-gh-hook"]
+
 # Example use:
 # RUN mkdir /course && git clone https://github.com/exlskills/course-python-introduction.git /course
 # ENV MGO_DB_NAME exldev
