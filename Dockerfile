@@ -24,7 +24,7 @@ COPY --from=gobuilder /go/src/github.com/exlskills/eocsutil/vendor/ ./vendor/
 
 RUN yarn install
 
-ENTRYPOINT ["/go/src/github.com/exlskills/eocsutil/eocsutil"]
+ENTRYPOINT ["./eocsutil"]
 CMD ["serve-gh-hook"]
 
 # Example use:
