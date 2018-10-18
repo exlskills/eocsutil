@@ -12,6 +12,8 @@ type Question struct {
 	EstTimeSec      int               `bson:"est_time_sec"`
 	Tags            []string          `bson:"tags"`
 	DocRef          DocRef            `bson:"doc_ref"`
+	ExamOnly        bool              `bson:"exam_only"`
+	CourseItemRef   CourseItemRef     `bson:"course_item_ref"`
 	Hint            IntlStringWrapper `bson:"hint"`
 	CreatedAt       time.Time         `bson:"created_at"`
 	UpdatedAt       time.Time         `bson:"updated_at"`

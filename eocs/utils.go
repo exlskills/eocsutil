@@ -56,11 +56,11 @@ func indexAndNameFromConcatenated(concated string) (idx int, name string, err er
 }
 
 var ignoredDirs = map[string]struct{}{
-	".git":   {},
-	".hg":    {},
-	".bzr":   {},
-	".idea":  {},
-	".":      {},
+	".git":  {},
+	".hg":   {},
+	".bzr":  {},
+	".idea": {},
+	".":     {},
 	// TODO implement assets dir, but for now ignore
 	"assets": {},
 }

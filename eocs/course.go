@@ -509,6 +509,11 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 				},
 			},
 		},
+		CourseItemRef: esmodels.CourseItemRef{
+			CourseID:  courseID,
+			UnitID:    unitID,
+			SectionID: sectID,
+		},
 		// todo tags
 		Tags:            []string{},
 		Points:          1,
@@ -543,6 +548,7 @@ func extractESExamFeatures(courseID, unitID string, sequential *Sequential, lang
 		if err != nil {
 			return nil, nil, err
 		}
+		q.ExamOnly = true
 		exam.EstTime += int(math.Round(float64(q.EstTimeSec) / 60))
 		exam.TimeLimit += int(math.Round((float64(q.EstTimeSec) * 1.5) / 60))
 		exam.QuestionIDs = append(exam.QuestionIDs, q.ID)
@@ -730,6 +736,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				return section, nil, nil, err
 			}
 			ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs = append(ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs, esmodels.EmbeddedDocRef{DocID: vert.URLName, Level: "card"})
+			ques.CourseItemRef.CardID = vert.URLName
 			qids = append(qids, ques.ID)
 			qs = append(qs, ques)
 		}
@@ -773,6 +780,12 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 						},
 					},
 				},
+			},
+			CourseItemRef: esmodels.CourseItemRef{
+				CourseID:  courseID,
+				UnitID:    unitID,
+				SectionID: sequential.URLName,
+				CardID:    vert.URLName,
 			},
 			// TODO tags
 			Tags: []string{},

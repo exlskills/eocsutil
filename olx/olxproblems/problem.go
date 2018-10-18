@@ -2,17 +2,17 @@ package olxproblems
 
 import (
 	"encoding/xml"
-	"github.com/exlskills/eocsutil/mdutils"
 	"github.com/dlclark/regexp2"
+	"github.com/exlskills/eocsutil/mdutils"
 )
 
 var (
 	reAmpSingle = regexp2.MustCompile("/(?<=`.*)(&amp;)(?=.*`)/g", 0)
-	reAmpMulti = regexp2.MustCompile("/(?<=```.*)(&amp;)(?=.*```)/gms", 0)
-	reGtSingle = regexp2.MustCompile("/(?<=`.*)(&gt;)(?=.*`)/g", 0)
-	reGtMulti = regexp2.MustCompile("/(?<=```.*)(&gt;)(?=.*```)/gms", 0)
-	reLtSingle = regexp2.MustCompile("/(?<=`.*)(&lt;)(?=.*`)/g", 0)
-	reLtMulti = regexp2.MustCompile("/(?<=```.*)(&lt;)(?=.*```)/gms", 0)
+	reAmpMulti  = regexp2.MustCompile("/(?<=```.*)(&amp;)(?=.*```)/gms", 0)
+	reGtSingle  = regexp2.MustCompile("/(?<=`.*)(&gt;)(?=.*`)/g", 0)
+	reGtMulti   = regexp2.MustCompile("/(?<=```.*)(&gt;)(?=.*```)/gms", 0)
+	reLtSingle  = regexp2.MustCompile("/(?<=`.*)(&lt;)(?=.*`)/g", 0)
+	reLtMulti   = regexp2.MustCompile("/(?<=```.*)(&lt;)(?=.*```)/gms", 0)
 )
 
 type Problem struct {
