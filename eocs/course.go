@@ -381,6 +381,14 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 		RepoURL:            course.GetExtraAttributes()["repo_url"],
 	}
+	if course.GetExtraAttributes()["instructor_timekit"] != "" {
+		instTK := esmodels.InstructorTimekit{}
+		err = json.Unmarshal([]byte(course.GetExtraAttributes()["instructor_timekit"]), &instTK)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+		esc.InstructorTimekit = &instTK
+	}
 	units, exams, qs, vc, err := extractESFeatures(course)
 	if err != nil {
 		return
@@ -920,20 +928,21 @@ func exportBlock(rootDir string, index int, blk *Block) (err error) {
 }
 
 type Course struct {
-	URLName      string     `yaml:"url_name"`
-	DisplayName  string     `yaml:"display_name"`
-	Org          string     `yaml:"org"`
-	CourseCode   string     `yaml:"course"`
-	CourseImage  string     `yaml:"course_image"`
-	Language     string     `yaml:"language"`
-	Headline     string     `yaml:"headline"`
-	Description  string     `yaml:"description"`
-	Topics       []string   `yaml:"topics,flow"`
-	PrimaryTopic string     `yaml:"primary_topic"`
-	InfoMD       string     `yaml:"info_md"`
-	RepoURL      string     `yaml:"repo_url"`
-	EstMinutes   int        `yaml:"est_minutes"`
-	Chapters     []*Chapter `yaml:"-"`
+	URLName           string                      `yaml:"url_name"`
+	DisplayName       string                      `yaml:"display_name"`
+	Org               string                      `yaml:"org"`
+	CourseCode        string                      `yaml:"course"`
+	CourseImage       string                      `yaml:"course_image"`
+	Language          string                      `yaml:"language"`
+	Headline          string                      `yaml:"headline"`
+	Description       string                      `yaml:"description"`
+	Topics            []string                    `yaml:"topics,flow"`
+	PrimaryTopic      string                      `yaml:"primary_topic"`
+	InfoMD            string                      `yaml:"info_md"`
+	RepoURL           string                      `yaml:"repo_url"`
+	EstMinutes        int                         `yaml:"est_minutes"`
+	InstructorTimekit *esmodels.InstructorTimekit `yaml:"instructor_timekit"`
+	Chapters          []*Chapter                  `yaml:"-"`
 }
 
 func (course *Course) GetDisplayName() string {
@@ -961,14 +970,16 @@ func (course *Course) GetLanguage() string {
 }
 
 func (course *Course) GetExtraAttributes() map[string]string {
+	extraAttrTK, _ := json.Marshal(course.InstructorTimekit)
 	return map[string]string{
-		"info_md":       course.InfoMD,
-		"description":   course.Description,
-		"headline":      course.Headline,
-		"topics":        concatExtraAttrCSV(course.Topics),
-		"primary_topic": course.PrimaryTopic,
-		"repo_url":      course.RepoURL,
-		"est_minutes":   strconv.Itoa(course.EstMinutes),
+		"info_md":            course.InfoMD,
+		"description":        course.Description,
+		"headline":           course.Headline,
+		"topics":             concatExtraAttrCSV(course.Topics),
+		"primary_topic":      course.PrimaryTopic,
+		"repo_url":           course.RepoURL,
+		"instructor_timekit": string(extraAttrTK),
+		"est_minutes":        strconv.Itoa(course.EstMinutes),
 	}
 }
 
