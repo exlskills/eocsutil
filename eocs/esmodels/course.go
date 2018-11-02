@@ -26,6 +26,7 @@ type Course struct {
 	Topics             []string           `bson:"topics"`
 	InstructorTimekit  *InstructorTimekit `bson:"instructor_timekit,omitempty"`
 	RepoURL            string             `bson:"repo_url"`
+	Weight             int                `bson:"weight"`
 	CreatedAt          time.Time          `bson:"created_at"`
 	UpdatedAt          time.Time          `bson:"updated_at"`
 }

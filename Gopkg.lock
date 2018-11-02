@@ -3,97 +3,158 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:a74730e052a45a3fab1d310fdef2ec17ae3d6af16228421e238320846f2aaec8"
   name = "github.com/alecthomas/template"
-  packages = [".","parse"]
+  packages = [
+    ".",
+    "parse",
+  ]
+  pruneopts = ""
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
 
 [[projects]]
   branch = "master"
+  digest = "1:8483994d21404c8a1d489f6be756e25bfccd3b45d65821f25695577791a08e68"
   name = "github.com/alecthomas/units"
   packages = ["."]
+  pruneopts = ""
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  digest = "1:556b75e96f02319585d253d262c4ce5dfdf4b28be474f1e0877c5f4f9b10cf9e"
   name = "github.com/dlclark/regexp2"
-  packages = [".","syntax"]
+  packages = [
+    ".",
+    "syntax",
+  ]
+  pruneopts = ""
   revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
   version = "v1.1.6"
 
 [[projects]]
   branch = "master"
+  digest = "1:5918a8e122613d70243104b8efd5339121bcb8a8a77c1ec4499f1d1e13682ab5"
   name = "github.com/exlinc/golang-utils"
-  packages = ["envconfig","jsonhttp"]
+  packages = [
+    "envconfig",
+    "jsonhttp",
+  ]
+  pruneopts = ""
   revision = "b526c57121307ce873f8cc45c01a25e3e8f31341"
 
 [[projects]]
   branch = "master"
+  digest = "1:c1e35087694b689ce1cf4f4277612b6ac0b55725fa791271ae0e3ddcd1cc0c7b"
   name = "github.com/globalsign/mgo"
-  packages = [".","bson","internal/json","internal/sasl","internal/scram"]
+  packages = [
+    ".",
+    "bson",
+    "internal/json",
+    "internal/sasl",
+    "internal/scram",
+  ]
+  pruneopts = ""
   revision = "113d3961e7311526535a1ef7042196563d442761"
 
 [[projects]]
+  digest = "1:dbbeb8ddb0be949954c8157ee8439c2adfd8dc1c9510eb44a6e58cb68c3dce28"
   name = "github.com/gorilla/context"
   packages = ["."]
+  pruneopts = ""
   revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:66d63ec7b6035984dced87ad37066e5f4ad277c60234a9d9925537248e983200"
   name = "github.com/gorilla/handlers"
   packages = ["."]
+  pruneopts = ""
   revision = "7e0847f9db758cdebd26c149d0ae9d5d0b9c98ce"
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:c2c8666b4836c81a1d247bdf21c6a6fc1ab586538ab56f74437c2e0df5c375e1"
   name = "github.com/gorilla/mux"
   packages = ["."]
+  pruneopts = ""
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
 
 [[projects]]
+  digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = ""
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:072af4062ae457d04860eeac1479f46bb01137e4dada0a1bfcd86b79ae150d9b"
   name = "github.com/remeh/sizedwaitgroup"
   packages = ["."]
+  pruneopts = ""
   revision = "5582a674300c427060d06980c142aeb52ed20040"
 
 [[projects]]
+  digest = "1:3fcbf733a8d810a21265a7f2fe08a3353db2407da052b233f8b204b5afc03d9b"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
+  pruneopts = ""
   revision = "3e01752db0189b9157070a0e1668a620f9a85da2"
   version = "v1.0.6"
 
 [[projects]]
   branch = "master"
+  digest = "1:4cae11053a5fc8e7b08228fcc14d161d3e60b64ba508a8b216937da472690991"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
+  pruneopts = ""
   revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
 
 [[projects]]
   branch = "master"
+  digest = "1:b779cc85de245422bf70d8a21e6afcf3c0591eca64dc507feb9f054f64b21ab9"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
+  packages = [
+    "unix",
+    "windows",
+  ]
+  pruneopts = ""
   revision = "4e1fef5609515ec7a2cee7b5de30ba6d9b438cbf"
 
 [[projects]]
+  digest = "1:15d017551627c8bb091bde628215b2861bed128855343fdd570c62d08871f6e1"
   name = "gopkg.in/alecthomas/kingpin.v2"
   packages = ["."]
+  pruneopts = ""
   revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
   version = "v2.2.6"
 
 [[projects]]
+  digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
+  pruneopts = ""
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
   version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "419be1febcf5707580903ffcca069434566a53af52c9b29f21f2481630642b1e"
+  input-imports = [
+    "github.com/dlclark/regexp2",
+    "github.com/exlinc/golang-utils/envconfig",
+    "github.com/exlinc/golang-utils/jsonhttp",
+    "github.com/globalsign/mgo",
+    "github.com/globalsign/mgo/bson",
+    "github.com/gorilla/handlers",
+    "github.com/gorilla/mux",
+    "github.com/pkg/errors",
+    "github.com/remeh/sizedwaitgroup",
+    "github.com/sirupsen/logrus",
+    "gopkg.in/alecthomas/kingpin.v2",
+    "gopkg.in/yaml.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

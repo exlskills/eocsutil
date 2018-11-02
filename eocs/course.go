@@ -360,6 +360,11 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		// Note this is just a sensible default, I don't believe that est_minutes should crash a course conversion
 		estMinutes = 600
 	}
+	weight, err := strconv.Atoi(course.GetExtraAttributes()["weight"])
+	if err != nil {
+		// Ensure default on error
+		weight = 0
+	}
 	esc = &esmodels.Course{
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
@@ -380,6 +385,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		OrganizationIDs:    []string{},
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 		RepoURL:            course.GetExtraAttributes()["repo_url"],
+		Weight:             weight,
 	}
 	if course.GetExtraAttributes()["instructor_timekit"] != "" {
 		instTK := esmodels.InstructorTimekit{}
@@ -940,6 +946,7 @@ type Course struct {
 	PrimaryTopic      string                      `yaml:"primary_topic"`
 	InfoMD            string                      `yaml:"info_md"`
 	RepoURL           string                      `yaml:"repo_url"`
+	Weight            int                         `yaml:"weight"`
 	EstMinutes        int                         `yaml:"est_minutes"`
 	InstructorTimekit *esmodels.InstructorTimekit `yaml:"instructor_timekit"`
 	Chapters          []*Chapter                  `yaml:"-"`
@@ -980,6 +987,7 @@ func (course *Course) GetExtraAttributes() map[string]string {
 		"repo_url":           course.RepoURL,
 		"instructor_timekit": string(extraAttrTK),
 		"est_minutes":        strconv.Itoa(course.EstMinutes),
+		"weight":             strconv.Itoa(course.Weight),
 	}
 }
 
