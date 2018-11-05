@@ -9,5 +9,6 @@ type Card struct {
 	QuestionIDs   []string          `bson:"question_ids"`
 	CardRef       DocRef            `bson:"card_ref"`
 	CourseItemRef CourseItemRef     `bson:"course_item_ref"`
+	GithubEditURL string            `bson:"github_edit_url,omitempty"`
 	Tags          []string          `bson:"tags"`
 }

@@ -211,6 +211,11 @@ func blockExtractionRoutine(wg *sizedwaitgroup.SizedWaitGroup, vert *Vertical, p
 }
 
 func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err error) {
+	rootPathParts := strings.Split(rootPath, "/")
+	if len(rootPathParts) < 4 {
+		return nil, errors.New("invalid path to block, must contain at least 4 directories (course->chapter->sequential->vertical) to form valid EOCS structure")
+	}
+	rootPathParts = rootPathParts[len(rootPathParts)-3:]
 	vertDirListing, err := ioutil.ReadDir(rootPath)
 	if err != nil {
 		return nil, err
@@ -251,6 +256,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				Markdown:    string(byteContents),
 				REPL:        rpl,
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".md") {
 			// Parse as `html` block
@@ -264,6 +270,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				URLName:     esmodels.ESID(),
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				Markdown:    string(byteContents),
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".repl.yaml") && !strings.HasSuffix(fi.Name(), ".prob.repl.yaml") {
 			// Parse as `exleditor` block
@@ -282,6 +289,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				URLName:     esmodels.ESID(),
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				REPL:        rpl,
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		}
 	}
@@ -408,7 +416,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 
 func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
 	for _, chap := range course.Chapters {
-		unit, uEx, uQs, uVcs, err := extractESUnitFeatures(course.URLName, chap, len(course.Chapters), course.Language)
+		unit, uEx, uQs, uVcs, err := extractESUnitFeatures(course.URLName, course.RepoURL, chap, len(course.Chapters), course.Language)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -420,7 +428,7 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 	return
 }
 
-func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+func extractESUnitFeatures(courseID, courseRepoUrl string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
 	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
@@ -438,7 +446,7 @@ func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang stri
 			exams = append(exams, seqEx)
 			unit.FinalExamIDs = append(unit.FinalExamIDs, seqEx.ID)
 		} else {
-			sect, seqQs, seqVcs, err := extractESSectionFeatures(courseID, chap.URLName, idx, seq, lang)
+			sect, seqQs, seqVcs, err := extractESSectionFeatures(courseID, courseRepoUrl, chap.URLName, idx, seq, lang)
 			if err != nil {
 				return esmodels.Unit{}, nil, nil, nil, err
 			}
@@ -667,13 +675,14 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 	return esc, nil
 }
 
-func extractESSectionFeatures(courseID, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)
 	section.Headline = esmodels.NewIntlStringWrapper("Learn "+sequential.DisplayName, lang)
 	for idx, vert := range sequential.Verticals {
 		var contentBuf bytes.Buffer
+		var ghEditUrl string
 		var qBlks []*Block
 		for _, blk := range vert.Blocks {
 			if blk.BlockType == "problem" {
@@ -738,6 +747,9 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				}
 				contentBuf.WriteString(mdContent)
 				contentBuf.WriteString("\n\n")
+				if courseRepoUrl != "" {
+					ghEditUrl, _ = esmodels.GenerateCardEditURL(courseRepoUrl, blk.FSPath)
+				}
 			} else {
 				return section, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
 			}
@@ -801,6 +813,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				SectionID: sequential.URLName,
 				CardID:    vert.URLName,
 			},
+			GithubEditURL: ghEditUrl,
 			// TODO tags
 			Tags: []string{},
 		}
