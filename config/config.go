@@ -9,12 +9,14 @@ import (
 
 type Config struct {
 	// The app is in production or debug mode
-	Mode             string `envconfig:"MODE" default:"production"`
-	MgoDBName        string `envconfig:"MGO_DB_NAME"`
-	GHWebhookSecret  string `envconfig:"GH_WEBHOOK_SECRET"`
-	GHServerAddr     string `envconfig:"GH_SERVER_ADDR" default:"0.0.0.0"`
-	GHServerPort     string `envconfig:"GH_SERVER_PORT" default:"3344"`
-	GHServerMongoURI string `envconfig:"GH_SERVER_MONGO_URI"`
+	Mode                   string `envconfig:"MODE" default:"production"`
+	MgoDBName              string `envconfig:"MGO_DB_NAME"`
+	GHWebhookSecret        string `envconfig:"GH_WEBHOOK_SECRET"`
+	GHServerAddr           string `envconfig:"GH_SERVER_ADDR" default:"0.0.0.0"`
+	GHServerPort           string `envconfig:"GH_SERVER_PORT" default:"3344"`
+	GHServerMongoURI       string `envconfig:"GH_SERVER_MONGO_URI"`
+	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
+	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX"`
 }
 
 var conf *Config

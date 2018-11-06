@@ -1,6 +1,7 @@
 package eocs
 
 import (
+	"fmt"
 	"github.com/exlskills/eocsutil/wsenv"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -71,10 +72,12 @@ func (repl *BlockREPL) LoadFilesFromFS(rootDir string) error {
 }
 
 func loadFilesFromFSForEnv(envKey, dir string) (files map[string]*wsenv.WorkspaceFile, err error) {
+	Log.Info("------------------> in loadFilesFromFSForEnv ")
 	fillinFiles, err := loadFilesFromDirRecursive(dir)
 	if err != nil {
 		return nil, err
 	}
+
 	switch envKey {
 	case "java_default_free":
 		files = map[string]*wsenv.WorkspaceFile{
@@ -106,6 +109,10 @@ func loadFilesFromFSForEnv(envKey, dir string) (files map[string]*wsenv.Workspac
 				},
 			},
 		}
+
+		for key, value := range files["src"].Children["main"].Children["java"].Children["exlcode"].Children{
+			fmt.Println("Key:", key, "Value:", value.Contents)
+		}
 		return
 	case "python_2_7_free":
 		return fillinFiles, nil
@@ -118,6 +125,7 @@ func loadFilesFromFSForEnv(envKey, dir string) (files map[string]*wsenv.Workspac
 }
 
 func loadFilesFromDirRecursive(dir string) (files map[string]*wsenv.WorkspaceFile, err error) {
+	Log.Info("------------------> in loadFilesFromDirRecursive ")
 	dirListing, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err

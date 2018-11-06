@@ -258,6 +258,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 			if err != nil {
 				return nil, err
 			}
+			Log.Info(`md byteContents `,string(byteContents))
 			blks = append(blks, &Block{
 				BlockType: "html",
 				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
@@ -271,11 +272,13 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 			if err != nil {
 				return nil, err
 			}
+			// Log.Info(`repl byteContents `,string(byteContents))
 			var rpl *BlockREPL
 			rpl, err = loadReplForEOCS(byteContents, rootPath)
 			if err != nil {
 				return nil, err
 			}
+			// Log.Info(`repl rpl `,rpl)
 			blks = append(blks, &Block{
 				BlockType: "exleditor",
 				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
@@ -306,33 +309,39 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 	return rpl, nil
 }
 
+// upsertCourseRecursive handles course load into the ES storage MongoDB and Elasticsearch targets
+// It takes the course objects alog with the target storage parameters, calls convertToESCourse to generate storage-ready objects
+// from the course object and manages the load
 func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) {
+	Log.Info("===========> IN HERE upsertCourseRecursive")
 	sess, err := mgo.DialWithTimeout(mongoURI, time.Duration(10*time.Second))
 	if err != nil {
 		return err
 	}
-	esc, exams, qs, vcs, err := convertToESCourse(course)
+	esc, exams, qs, vcs, esearchdocs, err := convertToESCourse(course)
 	if err != nil {
 		return err
 	}
 	db := sess.DB(dbName)
 
 	for _, q := range qs {
-		cInfo, err := db.C("question").UpsertId(q.ID, q)
+		// cInfo, err := db.C("question").UpsertId(q.ID, q)
+		_, err := db.C("question").UpsertId(q.ID, q)
 		if err != nil {
 			Log.Errorf("MongoDB error with 'question' object: %v, and error: %s", q, err.Error())
 			return err
 		}
-		Log.Info("EXLskills 'question' changes: ", *cInfo)
+		// Log.Info("EXLskills 'question' changes: ", *cInfo)
 	}
 
 	for _, vc := range vcs {
-		cInfo, err := db.C("versioned_content").UpsertId(vc.ID, vc)
+		//cInfo, err := db.C("versioned_content").UpsertId(vc.ID, vc)
+		_, err := db.C("versioned_content").UpsertId(vc.ID, vc)
 		if err != nil {
 			Log.Errorf("MongoDB error with 'versioned_content' object: %v, and error: %s", vc, err.Error())
 			return err
 		}
-		Log.Info("EXLskills 'versioned_content' changes: ", *cInfo)
+		// Log.Info("EXLskills 'versioned_content' changes: ", *cInfo)
 	}
 
 	for _, ex := range exams {
@@ -354,7 +363,10 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	return
 }
 
-func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+// convertToESCourse takes the Course object as populated in preceding steps and generates objects corresponding to the ES course storage model:
+// Four objects for the MongoDB collections and one object for the Elasticsearch index
+func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+	Log.Info("===========> IN HERE convertToESCourse")
 	estMinutes, err := strconv.Atoi(course.GetExtraAttributes()["est_minutes"])
 	if err != nil {
 		// Note this is just a sensible default, I don't believe that est_minutes should crash a course conversion
@@ -385,11 +397,11 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		instTK := esmodels.InstructorTimekit{}
 		err = json.Unmarshal([]byte(course.GetExtraAttributes()["instructor_timekit"]), &instTK)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, err
 		}
 		esc.InstructorTimekit = &instTK
 	}
-	units, exams, qs, vc, err := extractESFeatures(course)
+	units, exams, qs, vc, esearchdocs, err := extractESFeatures(course)
 	if err != nil {
 		return
 	}
@@ -397,24 +409,29 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		ID:    esmodels.ESID(),
 		Units: units,
 	}
+	Log.Info("===========> IN HERE convertToESCourse =========== DONE")
 	return
 }
 
-func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+	Log.Info("===========> IN HERE extractESFeatures")
 	for _, chap := range course.Chapters {
-		unit, uEx, uQs, uVcs, err := extractESUnitFeatures(course.URLName, chap, len(course.Chapters), course.Language)
+		unit, uEx, uQs, uVcs, uEsearchdocs, err := extractESUnitFeatures(course.URLName, chap, len(course.Chapters), course.Language)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, err
 		}
 		units = append(units, unit)
 		exams = append(exams, uEx...)
 		qs = append(qs, uQs...)
 		vc = append(vc, uVcs...)
+		esearchdocs = append(esearchdocs, uEsearchdocs...)
 	}
+	Log.Info("===========> IN HERE extractESFeatures ===========> DONE")
 	return
 }
 
-func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+	Log.Info("===========> IN HERE extractESUnitFeatures")
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
 	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
@@ -426,24 +443,26 @@ func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang stri
 		if seq.GetIsGraded() && strings.HasPrefix(seq.Format, "Final Exam") {
 			seqEx, seqQs, err := extractESExamFeatures(courseID, chap.URLName, seq, lang)
 			if err != nil {
-				return esmodels.Unit{}, nil, nil, nil, err
+				return esmodels.Unit{}, nil, nil, nil, nil, err
 			}
 			qs = append(qs, seqQs...)
 			exams = append(exams, seqEx)
 			unit.FinalExamIDs = append(unit.FinalExamIDs, seqEx.ID)
 		} else {
-			sect, seqQs, seqVcs, err := extractESSectionFeatures(courseID, chap.URLName, idx, seq, lang)
+			sect, seqQs, seqVcs, sEsearchdocs, err := extractESSectionFeatures(courseID, chap.URLName, idx, seq, lang)
 			if err != nil {
-				return esmodels.Unit{}, nil, nil, nil, err
+				return esmodels.Unit{}, nil, nil, nil, nil, err
 			}
 			sections = append(sections, sect)
 			qs = append(qs, seqQs...)
 			vc = append(vc, seqVcs...)
+			esearchdocs = append(esearchdocs, sEsearchdocs...)
 		}
 	}
 	unit.Sections = esmodels.SectionsWrapper{
 		Sections: sections,
 	}
+	Log.Info("===========> IN HERE extractESUnitFeatures ============> DONE")
 	return
 }
 
@@ -456,7 +475,7 @@ func extractEQQuestionFromBlock(courseID, unitID, sectID, quesID string, qBlk *B
 	if err != nil {
 		return nil, err
 	}
-	Log.Info(probMD)
+	// Log.Info(probMD)
 	olxProblem, err := olxproblems.NewProblemFromMD(probMD)
 	if err != nil {
 		return nil, err
@@ -661,7 +680,8 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 	return esc, nil
 }
 
-func extractESSectionFeatures(courseID, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, err error) {
+func extractESSectionFeatures(courseID, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+	Log.Info("===========> IN HERE extractESSectionFeatures")
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)
@@ -671,8 +691,11 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 		var qBlks []*Block
 		for _, blk := range vert.Blocks {
 			if blk.BlockType == "problem" {
+				Log.Info("===========> IN HERE extractESSectionFeatures -------------- problem")
 				qBlks = append(qBlks, blk)
 			} else if blk.BlockType == "exleditor" {
+				Log.Info("===========> IN HERE extractESSectionFeatures -------------- exleditor")
+				Log.Info("blk.REPL.SrcFiles ",blk.REPL.SrcFiles)
 				var (
 					srcStr  string
 					tmplStr string
@@ -686,9 +709,19 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 						Files:          blk.REPL.SrcFiles,
 					})
 					if err != nil {
-						return section, nil, nil, err
+						return section, nil, nil, nil, err
 					}
 					srcStr = string(b)
+					Log.Info("srcStr ",srcStr)
+					Log.Info("blk.REPL.EnvironmentKey -------------->>>>>>>> ",blk.REPL.EnvironmentKey)
+					if (blk.REPL.EnvironmentKey == "java_default_free") {
+						for key, value := range blk.REPL.SrcFiles["src"].Children["main"].Children["java"].Children["exlcode"].Children{
+							Log.Info("Key Here we go: ", key, " Value: ", value.Contents)
+						}
+					} else {
+						Log.Info("blk.REPL.SrcFiles not ranged ???????????????????? ---------> ", blk.REPL.SrcFiles)
+					}
+
 				}
 				if blk.REPL.TmplFiles != nil {
 					b, err := json.Marshal(wsenv.Workspace{
@@ -698,7 +731,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 						Files:          blk.REPL.TmplFiles,
 					})
 					if err != nil {
-						return section, nil, nil, err
+						return section, nil, nil, nil, err
 					}
 					tmplStr = string(b)
 				}
@@ -710,7 +743,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 						Files:          blk.REPL.TestFiles,
 					})
 					if err != nil {
-						return section, nil, nil, err
+						return section, nil, nil, nil, err
 					}
 					testStr = string(b)
 				}
@@ -721,19 +754,22 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				}
 				replBlkBytes, err := replBlock.IFrame()
 				if err != nil {
-					return section, nil, nil, err
+					return section, nil, nil, nil, err
 				}
+				Log.Info("replBlkBytes ",string(replBlkBytes))
 				contentBuf.Write(replBlkBytes)
 				contentBuf.WriteString("\n\n")
 			} else if blk.BlockType == "html" {
+				Log.Info("===========> IN HERE extractESSectionFeatures -------------- html")
 				mdContent, err := blk.GetContentMD()
 				if err != nil {
-					return section, nil, nil, err
+					return section, nil, nil, nil, err
 				}
+				Log.Info("mdContent !!!!!!!!!!!!!!!!!!!! ---------> ", mdContent)
 				contentBuf.WriteString(mdContent)
 				contentBuf.WriteString("\n\n")
 			} else {
-				return section, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
+				return section, nil, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
 			}
 		}
 		qids := make([]string, 0, len(qBlks))
@@ -741,7 +777,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			ques, err := extractEQQuestionFromBlock(courseID, unitID, section.ID, fmt.Sprintf("%s_q_%d", vert.URLName, qIdx), q, q.REPL, lang)
 			if err != nil {
 				Log.Error(err)
-				return section, nil, nil, err
+				return section, nil, nil, nil, err
 			}
 			ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs = append(ques.DocRef.EmbeddedDocRef.EmbeddedDocRefs, esmodels.EmbeddedDocRef{DocID: vert.URLName, Level: "card"})
 			ques.CourseItemRef.CardID = vert.URLName
@@ -767,28 +803,6 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			Index:       idx + 1,
 			ContentID:   vert.URLName + "_vc",
 			QuestionIDs: qids,
-			CardRef: esmodels.DocRef{
-				EmbeddedDocRef: esmodels.EmbeddedDocRefWrapper{
-					EmbeddedDocRefs: []esmodels.EmbeddedDocRef{
-						{
-							DocID: courseID,
-							Level: "course",
-						},
-						{
-							DocID: unitID,
-							Level: "unit",
-						},
-						{
-							DocID: sequential.URLName,
-							Level: "section",
-						},
-						{
-							DocID: vert.URLName,
-							Level: "card",
-						},
-					},
-				},
-			},
 			CourseItemRef: esmodels.CourseItemRef{
 				CourseID:  courseID,
 				UnitID:    unitID,
@@ -800,6 +814,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
 	}
+	Log.Info("===========> IN HERE extractESSectionFeatures =============> DONE")
 	return
 }
 

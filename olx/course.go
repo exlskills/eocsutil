@@ -56,6 +56,7 @@ func exportCourseRecursive(course ir.Course, rootDir string) (err error) {
 		Language:    course.GetLanguage(),
 		ExtraAttrs:  mapToXMLAttrs(course.GetExtraAttributes()),
 	}
+	Log.Info(`in exportCourseRecursive`)
 	err = appendIRChaptersToCourse(courseFile, course.GetChapters())
 	if err != nil {
 		return err
