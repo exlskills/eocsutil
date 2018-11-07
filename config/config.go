@@ -16,7 +16,7 @@ type Config struct {
 	GHServerPort           string `envconfig:"GH_SERVER_PORT" default:"3344"`
 	GHServerMongoURI       string `envconfig:"GH_SERVER_MONGO_URI"`
 	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
-	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX"`
+	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX" default:"learn"`
 }
 
 var conf *Config

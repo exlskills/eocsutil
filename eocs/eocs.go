@@ -52,5 +52,5 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 	if config.Cfg().MgoDBName == "" {
 		return errors.New("for EOCS course conversion the MGO_DB_NAME environment variable must be set to the name of the MongoDB database to write to")
 	}
-	return upsertCourseRecursive(course, toUri, config.Cfg().MgoDBName)
+	return upsertCourseRecursive(course, toUri, config.Cfg().MgoDBName, config.Cfg().ElasticsearchURI, config.Cfg().ElasticsearchBaseIndex)
 }

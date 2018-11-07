@@ -2,9 +2,11 @@ package eocs
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/olivere/elastic"
 	"github.com/exlskills/eocsutil/eocs/esmodels"
 	"github.com/exlskills/eocsutil/ir"
 	"github.com/exlskills/eocsutil/mdutils"
@@ -258,7 +260,6 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 			if err != nil {
 				return nil, err
 			}
-			Log.Info(`md byteContents `,string(byteContents))
 			blks = append(blks, &Block{
 				BlockType: "html",
 				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
@@ -272,13 +273,11 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 			if err != nil {
 				return nil, err
 			}
-			// Log.Info(`repl byteContents `,string(byteContents))
 			var rpl *BlockREPL
 			rpl, err = loadReplForEOCS(byteContents, rootPath)
 			if err != nil {
 				return nil, err
 			}
-			// Log.Info(`repl rpl `,rpl)
 			blks = append(blks, &Block{
 				BlockType: "exleditor",
 				// NOTE: This URLName is not actually used in the EXLskills import, so it is okay to set it on each load...
@@ -312,8 +311,7 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 // upsertCourseRecursive handles course load into the ES storage MongoDB and Elasticsearch targets
 // It takes the course objects alog with the target storage parameters, calls convertToESCourse to generate storage-ready objects
 // from the course object and manages the load
-func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) {
-	Log.Info("===========> IN HERE upsertCourseRecursive")
+func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearchURI string, elasticsearchIndex string) (err error) {
 	sess, err := mgo.DialWithTimeout(mongoURI, time.Duration(10*time.Second))
 	if err != nil {
 		return err
@@ -360,13 +358,42 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string) (err error) 
 	}
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
 
+	if (len(elasticsearchURI) > 0) {
+		Log.Infof("Starting to load Elasticsearch documents. There are %v documents to load", len(esearchdocs))
+		Log.Infof("Target Index %v", elasticsearchIndex + "_" + course.GetLanguage())
+		elasticsearchDocs := 0
+		elasticSearchClient, _ := elastic.NewClient(elastic.SetURL(elasticsearchURI))
+		if err != nil {
+			Log.Errorf("Elasticsearch connection issue for URI: %v, and error: %s", elasticsearchURI, err.Error())
+			return err
+		}
+		Log.Info("Elasticsearch connected ", elasticSearchClient)
+		for _, esd := range esearchdocs {
+			elasticsearchDocs++
+			Log.Infof("Loading doc ID %v type %v title %v",esd.ID,esd.DocType, esd.Title)
+			_, err = elasticSearchClient.Index().
+				Index(elasticsearchIndex + "_" + course.GetLanguage()).
+				Type("_doc").
+				Id(esd.ID).
+				BodyJson(esd).
+				Refresh("false").
+				Do(context.Background())
+			if err != nil {
+				// Handle error
+				Log.Errorf("Elasticsearch index issue for URI: %v, and error: %s", elasticsearchURI, err.Error())
+				return err
+			}
+
+		}
+		Log.Infof("Elasticsearch: indexed %v documents", elasticsearchDocs)
+	}
+
 	return
 }
 
 // convertToESCourse takes the Course object as populated in preceding steps and generates objects corresponding to the ES course storage model:
 // Four objects for the MongoDB collections and one object for the Elasticsearch index
 func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("===========> IN HERE convertToESCourse")
 	estMinutes, err := strconv.Atoi(course.GetExtraAttributes()["est_minutes"])
 	if err != nil {
 		// Note this is just a sensible default, I don't believe that est_minutes should crash a course conversion
@@ -409,12 +436,19 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		ID:    esmodels.ESID(),
 		Units: units,
 	}
-	Log.Info("===========> IN HERE convertToESCourse =========== DONE")
+
+	esearchdoc := &esmodels.ElasticsearchGenDoc{
+		ID: toGlobalId("Course",course.URLName),
+		DocType: "course",
+		Title:   course.DisplayName,
+		Headline: course.GetExtraAttributes()["headline"],
+		TextContent: course.GetExtraAttributes()["description"],
+	}
+	esearchdocs = append(esearchdocs, esearchdoc)
 	return
 }
 
 func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("===========> IN HERE extractESFeatures")
 	for _, chap := range course.Chapters {
 		unit, uEx, uQs, uVcs, uEsearchdocs, err := extractESUnitFeatures(course.URLName, chap, len(course.Chapters), course.Language)
 		if err != nil {
@@ -426,12 +460,11 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 		vc = append(vc, uVcs...)
 		esearchdocs = append(esearchdocs, uEsearchdocs...)
 	}
-	Log.Info("===========> IN HERE extractESFeatures ===========> DONE")
 	return
 }
 
 func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("===========> IN HERE extractESUnitFeatures")
+	Log.Info("Extracting ESUnit Features for ", chap.DisplayName)
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
 	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
@@ -462,7 +495,20 @@ func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang stri
 	unit.Sections = esmodels.SectionsWrapper{
 		Sections: sections,
 	}
-	Log.Info("===========> IN HERE extractESUnitFeatures ============> DONE")
+
+	courseItemRefUnit := esmodels.CourseItemRef{
+		CourseID:  courseID,
+	}
+	courseItemRefUnitJson, _ := json.Marshal(courseItemRefUnit)
+	esearchdoc := &esmodels.ElasticsearchGenDoc{
+		ID: toGlobalId("Unit",unit.ID),
+		DocType: "unit",
+		Title:   chap.DisplayName,
+		Headline: "Learn " + chap.DisplayName,
+		DocRef: string(courseItemRefUnitJson),
+	}
+	esearchdocs = append(esearchdocs, esearchdoc)
+
 	return
 }
 
@@ -680,8 +726,10 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 	return esc, nil
 }
 
+// extractESSectionFeatures iterates over sequential.Verticals that represents the lowest level in the topic structure hierarchy
+// Each element in sequential.Verticals contains one set of vert.Blocks comprising one Card
 func extractESSectionFeatures(courseID, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("===========> IN HERE extractESSectionFeatures")
+	Log.Info("Extracting ESSection Features for ", sequential.DisplayName)
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)
@@ -689,13 +737,12 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 	for idx, vert := range sequential.Verticals {
 		var contentBuf bytes.Buffer
 		var qBlks []*Block
+		var cardText strings.Builder
+		var cardCode strings.Builder
 		for _, blk := range vert.Blocks {
 			if blk.BlockType == "problem" {
-				Log.Info("===========> IN HERE extractESSectionFeatures -------------- problem")
 				qBlks = append(qBlks, blk)
 			} else if blk.BlockType == "exleditor" {
-				Log.Info("===========> IN HERE extractESSectionFeatures -------------- exleditor")
-				Log.Info("blk.REPL.SrcFiles ",blk.REPL.SrcFiles)
 				var (
 					srcStr  string
 					tmplStr string
@@ -712,16 +759,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 						return section, nil, nil, nil, err
 					}
 					srcStr = string(b)
-					Log.Info("srcStr ",srcStr)
-					Log.Info("blk.REPL.EnvironmentKey -------------->>>>>>>> ",blk.REPL.EnvironmentKey)
-					if (blk.REPL.EnvironmentKey == "java_default_free") {
-						for key, value := range blk.REPL.SrcFiles["src"].Children["main"].Children["java"].Children["exlcode"].Children{
-							Log.Info("Key Here we go: ", key, " Value: ", value.Contents)
-						}
-					} else {
-						Log.Info("blk.REPL.SrcFiles not ranged ???????????????????? ---------> ", blk.REPL.SrcFiles)
-					}
-
+					cardCode.WriteString(blk.REPL.GetRawSrcFilesContentsString())
 				}
 				if blk.REPL.TmplFiles != nil {
 					b, err := json.Marshal(wsenv.Workspace{
@@ -756,18 +794,16 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				if err != nil {
 					return section, nil, nil, nil, err
 				}
-				Log.Info("replBlkBytes ",string(replBlkBytes))
 				contentBuf.Write(replBlkBytes)
 				contentBuf.WriteString("\n\n")
 			} else if blk.BlockType == "html" {
-				Log.Info("===========> IN HERE extractESSectionFeatures -------------- html")
 				mdContent, err := blk.GetContentMD()
 				if err != nil {
 					return section, nil, nil, nil, err
 				}
-				Log.Info("mdContent !!!!!!!!!!!!!!!!!!!! ---------> ", mdContent)
 				contentBuf.WriteString(mdContent)
 				contentBuf.WriteString("\n\n")
+				cardText.WriteString(mdContent)
 			} else {
 				return section, nil, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
 			}
@@ -813,8 +849,34 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 			Tags: []string{},
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
+		Log.Info("Added Card ", vert.DisplayName)
+
+		courseItemRefCardJson, _ := json.Marshal(card.CourseItemRef)
+		esearchdoc := &esmodels.ElasticsearchGenDoc{
+			ID: toGlobalId("Card",vert.URLName),
+			DocType: "card",
+			Title:   vert.DisplayName,
+			Headline: "Learn " + vert.DisplayName,
+			TextContent: cardText.String(),
+			CodeContent: cardCode.String(),
+			DocRef: string(courseItemRefCardJson),
+		}
+		esearchdocs = append(esearchdocs, esearchdoc)
 	}
-	Log.Info("===========> IN HERE extractESSectionFeatures =============> DONE")
+
+	courseItemRefSection := esmodels.CourseItemRef{
+		CourseID:  courseID,
+		UnitID:    unitID,
+	}
+	courseItemRefSectionJson, _ := json.Marshal(courseItemRefSection)
+	esearchdoc := &esmodels.ElasticsearchGenDoc{
+		ID: toGlobalId("Section",section.ID),
+		DocType: "section",
+		Title:   sequential.DisplayName,
+		Headline: "Learn " + sequential.DisplayName,
+		DocRef: string(courseItemRefSectionJson),
+	}
+	esearchdocs = append(esearchdocs, esearchdoc)
 	return
 }
 

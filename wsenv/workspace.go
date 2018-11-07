@@ -28,7 +28,6 @@ func (wfs *Workspace) SetupFileSystem(rootPath string) error {
 
 // Returns: indices to find file from root filesystem map, pointer to WorkspaceFile, relative path to file, error
 func (wfs *Workspace) GetFileRef(isSudoMode bool, relPath string) ([]string, *WorkspaceFile, string, error) {
-	Log.Info("---------------> in GetFileRef  ")
 	inds := make([]string, 0)
 	if err := basicFileNameCheck(relPath); err != nil {
 		return inds, nil, "", err

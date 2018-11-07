@@ -5,7 +5,7 @@ Command-line tool and GoLang API for working with EOCS and OLX courseware. This 
 ## Prerequisites
 
 + Linux or OS X recommended (PRs for Windows support are welcome)
-+ GoLang 1.9.^  (`GOPATH` must be set)
++ GoLang 1.10.^  (`GOPATH` must be set)
 + GoLang `dep` tool [Install Guide](https://github.com/golang/dep#setup)
 + NodeJS v8.10+
 + Yarn 1.7+
@@ -21,7 +21,7 @@ yarn install
 go build # Optional, but this will validate that you have the correct golang deps
 ```
 
-## Load EOCS course into EXLskills MongoDB
+## Load EOCS course into EXLskills MongoDB and Elasticsearch (version 6.x)
 
 ### Assumptions
 
@@ -30,6 +30,14 @@ go build # Optional, but this will validate that you have the correct golang dep
 
 ```
 export MGO_DB_NAME="<name of the MongoDB target database>"
+
+# Note: if Elasticsearch URI is not provided - the indexing will be bypassed
+export ELASTICSEARCH_URI="http://localhost:9200"
+
+# The default value for Elasticsearch "base" index is "learn". The actual index name will be set to the base plus "_<course launguage>", e.g., "base_en"
+# To override the base name, set the Environment variable as below 
+export ELASTICSEARCH_BASE_INDEX="learn"
+ 
 # Note: `go run` will compile eocsutil on the fly with any code changes, to compile ahead of time, use `go build` and then execute the binary
 go run main.go convert --from-format eocs --from-uri <path to the course files folder> --to-format eocs --to-uri mongodb://localhost:27017
 ```
