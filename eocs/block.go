@@ -30,6 +30,7 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 			BlockType:   b.GetBlockType(),
 			URLName:     b.GetURLName(),
 			DisplayName: b.GetDisplayName(),
+			FSPath:      b.GetExtraAttributes()["fs_path"],
 		}
 		if newB.BlockType == "problem" {
 			md, err := b.GetContentMD()
@@ -70,6 +71,7 @@ type Block struct {
 	DisplayName string     `yaml:"display_name"`
 	Markdown    string     `yaml:"-"`
 	REPL        *BlockREPL `yaml:"-"`
+	FSPath      string     `yaml:"-"`
 }
 
 func (block *Block) GetDisplayName() string {
@@ -95,7 +97,9 @@ func (block *Block) GetContentOLX() (string, error) {
 }
 
 func (block *Block) GetExtraAttributes() map[string]string {
-	return map[string]string{}
+	return map[string]string{
+		"fs_path": block.FSPath,
+	}
 }
 
 func (block *Block) UnmarshalREPLFromOLX(cfgJSON string) (err error) {

@@ -213,6 +213,11 @@ func blockExtractionRoutine(wg *sizedwaitgroup.SizedWaitGroup, vert *Vertical, p
 }
 
 func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err error) {
+	rootPathParts := strings.Split(rootPath, "/")
+	if len(rootPathParts) < 4 {
+		return nil, errors.New("invalid path to block, must contain at least 4 directories (course->chapter->sequential->vertical) to form valid EOCS structure")
+	}
+	rootPathParts = rootPathParts[len(rootPathParts)-3:]
 	vertDirListing, err := ioutil.ReadDir(rootPath)
 	if err != nil {
 		return nil, err
@@ -253,6 +258,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				Markdown:    string(byteContents),
 				REPL:        rpl,
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".md") {
 			// Parse as `html` block
@@ -266,6 +272,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				URLName:     esmodels.ESID(),
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				Markdown:    string(byteContents),
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".repl.yaml") && !strings.HasSuffix(fi.Name(), ".prob.repl.yaml") {
 			// Parse as `exleditor` block
@@ -284,6 +291,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				URLName:     esmodels.ESID(),
 				DisplayName: strings.SplitN(fi.Name(), ".", 2)[0],
 				REPL:        rpl,
+				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		}
 	}
@@ -399,6 +407,11 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		// Note this is just a sensible default, I don't believe that est_minutes should crash a course conversion
 		estMinutes = 600
 	}
+	weight, err := strconv.Atoi(course.GetExtraAttributes()["weight"])
+	if err != nil {
+		// Ensure default on error
+		weight = 0
+	}
 	esc = &esmodels.Course{
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
@@ -419,6 +432,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		OrganizationIDs:    []string{},
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 		RepoURL:            course.GetExtraAttributes()["repo_url"],
+		Weight:             weight,
 	}
 	if course.GetExtraAttributes()["instructor_timekit"] != "" {
 		instTK := esmodels.InstructorTimekit{}
@@ -450,7 +464,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 
 func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
 	for _, chap := range course.Chapters {
-		unit, uEx, uQs, uVcs, uEsearchdocs, err := extractESUnitFeatures(course.URLName, chap, len(course.Chapters), course.Language)
+		unit, uEx, uQs, uVcs, uEsearchdocs, err := extractESUnitFeatures(course.URLName, course.RepoURL, chap, len(course.Chapters), course.Language)
 		if err != nil {
 			return nil, nil, nil, nil, nil, err
 		}
@@ -463,7 +477,7 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 	return
 }
 
-func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
 	Log.Info("Extracting ESUnit Features for ", chap.DisplayName)
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
@@ -482,7 +496,7 @@ func extractESUnitFeatures(courseID string, chap *Chapter, nChaps int, lang stri
 			exams = append(exams, seqEx)
 			unit.FinalExamIDs = append(unit.FinalExamIDs, seqEx.ID)
 		} else {
-			sect, seqQs, seqVcs, sEsearchdocs, err := extractESSectionFeatures(courseID, chap.URLName, idx, seq, lang)
+			sect, seqQs, seqVcs, sEsearchdocs, err := extractESSectionFeatures(courseID, courseRepoUrl, chap.URLName, idx, seq, lang)
 			if err != nil {
 				return esmodels.Unit{}, nil, nil, nil, nil, err
 			}
@@ -728,7 +742,7 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 
 // extractESSectionFeatures iterates over sequential.Verticals that represents the lowest level in the topic structure hierarchy
 // Each element in sequential.Verticals contains one set of vert.Blocks comprising one Card
-func extractESSectionFeatures(courseID, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
+func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
 	Log.Info("Extracting ESSection Features for ", sequential.DisplayName)
 	section.ID = sequential.URLName
 	section.Index = index + 1
@@ -736,6 +750,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 	section.Headline = esmodels.NewIntlStringWrapper("Learn "+sequential.DisplayName, lang)
 	for idx, vert := range sequential.Verticals {
 		var contentBuf bytes.Buffer
+		var ghEditUrl string
 		var qBlks []*Block
 		var cardText strings.Builder
 		var cardCode strings.Builder
@@ -804,6 +819,9 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				contentBuf.WriteString(mdContent)
 				contentBuf.WriteString("\n\n")
 				cardText.WriteString(mdContent)
+				if courseRepoUrl != "" {
+					ghEditUrl, _ = esmodels.GenerateCardEditURL(courseRepoUrl, blk.FSPath)
+				}
 			} else {
 				return section, nil, nil, nil, errors.New("invalid block type, must be problem, html, or exleditor for a vertical")
 			}
@@ -845,6 +863,7 @@ func extractESSectionFeatures(courseID, unitID string, index int, sequential *Se
 				SectionID: sequential.URLName,
 				CardID:    vert.URLName,
 			},
+			GithubEditURL: ghEditUrl,
 			// TODO tags
 			Tags: []string{},
 		}
@@ -1017,6 +1036,7 @@ type Course struct {
 	PrimaryTopic      string                      `yaml:"primary_topic"`
 	InfoMD            string                      `yaml:"info_md"`
 	RepoURL           string                      `yaml:"repo_url"`
+	Weight            int                         `yaml:"weight"`
 	EstMinutes        int                         `yaml:"est_minutes"`
 	InstructorTimekit *esmodels.InstructorTimekit `yaml:"instructor_timekit"`
 	Chapters          []*Chapter                  `yaml:"-"`
@@ -1057,6 +1077,7 @@ func (course *Course) GetExtraAttributes() map[string]string {
 		"repo_url":           course.RepoURL,
 		"instructor_timekit": string(extraAttrTK),
 		"est_minutes":        strconv.Itoa(course.EstMinutes),
+		"weight":             strconv.Itoa(course.Weight),
 	}
 }
 

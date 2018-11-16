@@ -8,5 +8,6 @@ type Card struct {
 	ContentID     string            `bson:"content_id"`
 	QuestionIDs   []string          `bson:"question_ids"`
 	CourseItemRef CourseItemRef     `bson:"course_item_ref"`
+	GithubEditURL string            `bson:"github_edit_url,omitempty"`
 	Tags          []string          `bson:"tags"`
 }
