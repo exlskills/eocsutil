@@ -175,10 +175,7 @@
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
-<<<<<<< HEAD
     "github.com/olivere/elastic",
-=======
->>>>>>> master
     "github.com/pkg/errors",
     "github.com/remeh/sizedwaitgroup",
     "github.com/sirupsen/logrus",
