@@ -389,7 +389,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 			elasticSearchClient, err = elastic.NewClient(elastic.SetHttpClient(client), elastic.SetSniff(false), elastic.SetURL(elasticsearchURI))
 		} else {
 			// This is used in Production and for HTTP backend testing
-			elasticSearchClient, err = elastic.NewClient(elastic.SetURL(elasticsearchURI))
+			elasticSearchClient, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(elasticsearchURI))
 		}
 		if err != nil {
 			Log.Errorf("Elasticsearch connection issue for URI: %v. Error: %s", elasticsearchURI, err.Error())
