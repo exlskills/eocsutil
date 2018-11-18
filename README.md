@@ -42,6 +42,24 @@ export ELASTICSEARCH_BASE_INDEX="learn"
 go run main.go convert --from-format eocs --from-uri <path to the course files folder> --to-format eocs --to-uri mongodb://localhost:27017
 ```
 
+### Connecting to Elasticsearch HTTPS Backend in a non-production mode 
+
+Some Elasticsearch security models, e.g., AWS VPC Elasticsearch Service, require HTTPS connectivity in either Production or Test modes. To bypass Certificate validation in testing, ensure to set
+```
+export MODE=debug
+```
+
+A full example of connecting to AWS VPC Elasticsearch Service for testing:
+```
+// This is run in a separate terminal session that creates a tunnel to the AWS VPC via any instance running in the VPC:
+ssh -i ~/.ssh/myAwsInstanceKey ec2-user@123.4.5.6 -N -L 19200:vpc-my-es-service.us-west-2.es.amazonaws.com:443
+
+// This is run in the eocsutil testing terminal session: 
+export MODE=debug
+export ELASTICSEARCH_URI="https://localhost:19200"
+```
+  
+
 ## FAQ
 
 ### I'm getting errors about showdownjs

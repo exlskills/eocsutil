@@ -3,10 +3,11 @@ package eocs
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/olivere/elastic"
+	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/eocs/esmodels"
 	"github.com/exlskills/eocsutil/ir"
 	"github.com/exlskills/eocsutil/mdutils"
@@ -14,10 +15,13 @@ import (
 	"github.com/exlskills/eocsutil/wsenv"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/olivere/elastic"
 	"github.com/remeh/sizedwaitgroup"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -367,18 +371,38 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
 
 	if (len(elasticsearchURI) > 0) {
-		Log.Infof("Starting to load Elasticsearch documents. There are %v documents to load", len(esearchdocs))
-		Log.Infof("Target Index %v", elasticsearchIndex + "_" + course.GetLanguage())
-		elasticsearchDocs := 0
-		elasticSearchClient, _ := elastic.NewClient(elastic.SetURL(elasticsearchURI))
+		u, err := url.Parse(elasticsearchURI)
 		if err != nil {
-			Log.Errorf("Elasticsearch connection issue for URI: %v, and error: %s", elasticsearchURI, err.Error())
+			Log.Errorf("Elasticsearch URI is invalid: %v. Parsing error: %s", elasticsearchURI, err.Error())
+			return err
+		}
+
+		var elasticSearchClient *elastic.Client
+
+		if (u.Scheme == "https" && !config.Cfg().IsProductionMode()) {
+			// This is used for testing HTTPS backends bypassing Certificate validation
+			// Set ENV MODE=debug
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+			client := &http.Client{Transport: tr}
+			elasticSearchClient, err = elastic.NewClient(elastic.SetHttpClient(client), elastic.SetSniff(false), elastic.SetURL(elasticsearchURI))
+		} else {
+			// This is used in Production and for HTTP backend testing
+			elasticSearchClient, err = elastic.NewClient(elastic.SetURL(elasticsearchURI))
+		}
+		if err != nil {
+			Log.Errorf("Elasticsearch connection issue for URI: %v. Error: %s", elasticsearchURI, err.Error())
 			return err
 		}
 		Log.Info("Elasticsearch connected ", elasticSearchClient)
+
+		Log.Infof("Starting to load Elasticsearch documents. There are %v documents to load", len(esearchdocs))
+		Log.Infof("Target Index %v", elasticsearchIndex+"_"+course.GetLanguage())
+		elasticsearchDocs := 0
 		for _, esd := range esearchdocs {
 			elasticsearchDocs++
-			Log.Infof("Loading doc ID %v type %v title %v",esd.ID,esd.DocType, esd.Title)
+			Log.Infof("Loading doc ID %v type %v title %v", esd.ID, esd.DocType, esd.Title)
 			_, err = elasticSearchClient.Index().
 				Index(elasticsearchIndex + "_" + course.GetLanguage()).
 				Type("_doc").
@@ -452,10 +476,10 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 	}
 
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
-		ID: toGlobalId("Course",course.URLName),
-		DocType: "course",
-		Title:   course.DisplayName,
-		Headline: course.GetExtraAttributes()["headline"],
+		ID:          toGlobalId("Course", course.URLName),
+		DocType:     "course",
+		Title:       course.DisplayName,
+		Headline:    course.GetExtraAttributes()["headline"],
 		TextContent: course.GetExtraAttributes()["description"],
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
@@ -511,15 +535,15 @@ func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter,
 	}
 
 	courseItemRefUnit := esmodels.CourseItemRef{
-		CourseID:  courseID,
+		CourseID: courseID,
 	}
 	courseItemRefUnitJson, _ := json.Marshal(courseItemRefUnit)
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
-		ID: toGlobalId("Unit",unit.ID),
-		DocType: "unit",
-		Title:   chap.DisplayName,
+		ID:       toGlobalId("Unit", unit.ID),
+		DocType:  "unit",
+		Title:    chap.DisplayName,
 		Headline: "Learn " + chap.DisplayName,
-		DocRef: string(courseItemRefUnitJson),
+		DocRef:   string(courseItemRefUnitJson),
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 
@@ -872,28 +896,28 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 
 		courseItemRefCardJson, _ := json.Marshal(card.CourseItemRef)
 		esearchdoc := &esmodels.ElasticsearchGenDoc{
-			ID: toGlobalId("Card",vert.URLName),
-			DocType: "card",
-			Title:   vert.DisplayName,
-			Headline: "Learn " + vert.DisplayName,
+			ID:          toGlobalId("Card", vert.URLName),
+			DocType:     "card",
+			Title:       vert.DisplayName,
+			Headline:    "Learn " + vert.DisplayName,
 			TextContent: cardText.String(),
 			CodeContent: cardCode.String(),
-			DocRef: string(courseItemRefCardJson),
+			DocRef:      string(courseItemRefCardJson),
 		}
 		esearchdocs = append(esearchdocs, esearchdoc)
 	}
 
 	courseItemRefSection := esmodels.CourseItemRef{
-		CourseID:  courseID,
-		UnitID:    unitID,
+		CourseID: courseID,
+		UnitID:   unitID,
 	}
 	courseItemRefSectionJson, _ := json.Marshal(courseItemRefSection)
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
-		ID: toGlobalId("Section",section.ID),
-		DocType: "section",
-		Title:   sequential.DisplayName,
+		ID:       toGlobalId("Section", section.ID),
+		DocType:  "section",
+		Title:    sequential.DisplayName,
 		Headline: "Learn " + sequential.DisplayName,
-		DocRef: string(courseItemRefSectionJson),
+		DocRef:   string(courseItemRefSectionJson),
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 	return

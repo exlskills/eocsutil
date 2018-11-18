@@ -49,7 +49,7 @@ func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
 	courseDir := unzippedFilePaths[0]
 	err = eocs.NewEOCSFormat().Push(courseDir, config.Cfg().GHServerMongoURI)
 	if err != nil {
-		Log.Errorf("Course mongodb push failed: %s", err.Error())
+		Log.Errorf("Course push failed: %s", err.Error())
 		jsonhttp.JSONInternalError(w, "An error occurred importing the course", "")
 		return
 	}
