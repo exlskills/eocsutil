@@ -481,6 +481,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		Title:       course.DisplayName,
 		Headline:    course.GetExtraAttributes()["headline"],
 		TextContent: course.GetExtraAttributes()["description"],
+		CourseId:    course.URLName,
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 	return
@@ -534,16 +535,13 @@ func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter,
 		Sections: sections,
 	}
 
-	courseItemRefUnit := esmodels.CourseItemRef{
-		CourseID: courseID,
-	}
-	courseItemRefUnitJson, _ := json.Marshal(courseItemRefUnit)
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
 		ID:       toGlobalId("Unit", unit.ID),
 		DocType:  "unit",
 		Title:    chap.DisplayName,
 		Headline: "Learn " + chap.DisplayName,
-		DocRef:   string(courseItemRefUnitJson),
+		CourseId: courseID,
+		UnitId:   unit.ID,
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 
@@ -894,7 +892,6 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 		section.Cards.Cards = append(section.Cards.Cards, card)
 		Log.Info("Added Card ", vert.DisplayName)
 
-		courseItemRefCardJson, _ := json.Marshal(card.CourseItemRef)
 		esearchdoc := &esmodels.ElasticsearchGenDoc{
 			ID:          toGlobalId("Card", vert.URLName),
 			DocType:     "card",
@@ -902,22 +899,22 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			Headline:    "Learn " + vert.DisplayName,
 			TextContent: cardText.String(),
 			CodeContent: cardCode.String(),
-			DocRef:      string(courseItemRefCardJson),
+			CourseId: courseID,
+			UnitId:   unitID,
+			SectionId: sequential.URLName,
+			CardId:   vert.URLName,
 		}
 		esearchdocs = append(esearchdocs, esearchdoc)
 	}
 
-	courseItemRefSection := esmodels.CourseItemRef{
-		CourseID: courseID,
-		UnitID:   unitID,
-	}
-	courseItemRefSectionJson, _ := json.Marshal(courseItemRefSection)
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
 		ID:       toGlobalId("Section", section.ID),
 		DocType:  "section",
 		Title:    sequential.DisplayName,
 		Headline: "Learn " + sequential.DisplayName,
-		DocRef:   string(courseItemRefSectionJson),
+		CourseId: courseID,
+		UnitId:   unitID,
+        SectionId: section.ID,
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 	return
