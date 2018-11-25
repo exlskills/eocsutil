@@ -70,11 +70,17 @@ func (repl *BlockREPL) LoadFilesFromFS(rootDir string) error {
 	return nil
 }
 
+func (repl *BlockREPL) GetRawSrcFilesContentsString() string {
+	s, _ := extractFileContents(repl.SrcFiles)
+	return s
+}
+
 func loadFilesFromFSForEnv(envKey, dir string) (files map[string]*wsenv.WorkspaceFile, err error) {
 	fillinFiles, err := loadFilesFromDirRecursive(dir)
 	if err != nil {
 		return nil, err
 	}
+
 	switch envKey {
 	case "java_default_free":
 		files = map[string]*wsenv.WorkspaceFile{
@@ -160,4 +166,23 @@ func getProblemREPLPath(shebang string) (path string, err error) {
 		return "", errors.New("invalid problem REPL shebang")
 	}
 	return filepath.Clean(strings.Replace(strings.Replace(shebang, "#!exl::repl('", "", 1), "')", "", 1)), nil
+}
+
+// extractFileContents is a helper function that scans the file map object recursively and concatenates contents of each file
+// into a string
+func extractFileContents (files map[string]*wsenv.WorkspaceFile) (s string, err error) {
+	var contentsBuilder strings.Builder
+	for _, wf := range files {
+		if len(wf.Contents) > 0 {
+			contentsBuilder.WriteString(wf.Contents)
+		}
+		if len(wf.Children) > 0 {
+			childrenContents, err := extractFileContents(wf.Children)
+			if err != nil {
+				return "",err
+			}
+			contentsBuilder.WriteString(childrenContents)
+		}
+	}
+	return contentsBuilder.String(), err
 }

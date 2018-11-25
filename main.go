@@ -55,7 +55,7 @@ func run() {
 		if strings.HasPrefix(*convertToURI, "mongodb://") {
 			err := eocs.NewEOCSFormat().Push(*convertFromURI, *convertToURI)
 			if err != nil {
-				Log.Errorf("Course mongodb push failed: %s", err.Error())
+				Log.Errorf("Course push failed: %s", err.Error())
 				return
 			}
 			return

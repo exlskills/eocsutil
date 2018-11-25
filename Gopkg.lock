@@ -81,6 +81,31 @@
   version = "v1.6.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:212bebc561f4f654a653225868b2a97353cd5e160dc0b0bbc7232b06608474ec"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    ".",
+    "buffer",
+    "jlexer",
+    "jwriter",
+  ]
+  pruneopts = ""
+  revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
+
+[[projects]]
+  digest = "1:84888145afd06f7e80db09851e0c4ec22996658d5075185b12040c5d46e65eee"
+  name = "github.com/olivere/elastic"
+  packages = [
+    ".",
+    "config",
+    "uritemplates",
+  ]
+  pruneopts = ""
+  revision = "4982266e48e0dc5c639e389b50221dcef09cdc99"
+  version = "v6.2.12"
+
+[[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -150,6 +175,7 @@
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
+    "github.com/olivere/elastic",
     "github.com/pkg/errors",
     "github.com/remeh/sizedwaitgroup",
     "github.com/sirupsen/logrus",

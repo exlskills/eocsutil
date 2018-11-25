@@ -2,8 +2,11 @@ package wsenv
 
 import (
 	"errors"
+	"github.com/exlskills/eocsutil/config"
 	"strings"
 )
+
+var Log = config.Cfg().GetLogger()
 
 type Workspace struct {
 	Id             string                    `json:"id"`

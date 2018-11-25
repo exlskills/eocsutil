@@ -31,6 +31,7 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 		}
 		var nodes []*BlockNode
 		olxStr, err := b.GetContentOLX()
+		Log.Info("olxStr: ", olxStr)
 		if err != nil {
 			if b.GetBlockType() == "html" {
 				md, err := b.GetContentMD()
@@ -39,6 +40,7 @@ func appendIRBlocksToVertical(vert *Vertical, blocks []ir.Block) (err error) {
 					return err
 				}
 				olxStr, err = mdutils.MakeHTML(md, "github")
+				Log.Info("md: ", olxStr)
 				if err != nil {
 					return errors.New(fmt.Sprintf("olx: error converting md to OLX: %s", err.Error()))
 				}

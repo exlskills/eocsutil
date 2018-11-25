@@ -1,6 +1,7 @@
 package eocs
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -78,4 +79,8 @@ func concatExtraAttrCSV(list []string) string {
 
 func extraAttrCSVToStrSlice(str string) []string {
 	return strings.Split(str, ",")
+}
+
+func toGlobalId (prefix string, id string) string {
+	return base64.StdEncoding.EncodeToString([]byte(prefix + ":" +id))
 }
