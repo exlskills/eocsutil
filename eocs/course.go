@@ -370,7 +370,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	}
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
 
-	if (len(elasticsearchURI) > 0) {
+	if len(elasticsearchURI) > 0 {
 		u, err := url.Parse(elasticsearchURI)
 		if err != nil {
 			Log.Errorf("Elasticsearch URI is invalid: %v. Parsing error: %s", elasticsearchURI, err.Error())
@@ -379,7 +379,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 
 		var elasticSearchClient *elastic.Client
 
-		if (u.Scheme == "https" && !config.Cfg().IsProductionMode()) {
+		if u.Scheme == "https" && !config.Cfg().IsProductionMode() {
 			// This is used for testing HTTPS backends bypassing Certificate validation
 			// Set ENV MODE=debug
 			tr := &http.Transport{
@@ -899,22 +899,22 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			Headline:    "Learn " + vert.DisplayName,
 			TextContent: cardText.String(),
 			CodeContent: cardCode.String(),
-			CourseId: courseID,
-			UnitId:   unitID,
-			SectionId: sequential.URLName,
-			CardId:   vert.URLName,
+			CourseId:    courseID,
+			UnitId:      unitID,
+			SectionId:   sequential.URLName,
+			CardId:      vert.URLName,
 		}
 		esearchdocs = append(esearchdocs, esearchdoc)
 	}
 
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
-		ID:       toGlobalId("Section", section.ID),
-		DocType:  "section",
-		Title:    sequential.DisplayName,
-		Headline: "Learn " + sequential.DisplayName,
-		CourseId: courseID,
-		UnitId:   unitID,
-        SectionId: section.ID,
+		ID:        toGlobalId("Section", section.ID),
+		DocType:   "section",
+		Title:     sequential.DisplayName,
+		Headline:  "Learn " + sequential.DisplayName,
+		CourseId:  courseID,
+		UnitId:    unitID,
+		SectionId: section.ID,
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 	return

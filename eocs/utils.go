@@ -64,6 +64,7 @@ var ignoredDirs = map[string]struct{}{
 	".":     {},
 	// TODO implement assets dir, but for now ignore
 	"assets": {},
+	"drafts": {},
 }
 
 func isIgnoredDir(name string) bool {
@@ -81,6 +82,6 @@ func extraAttrCSVToStrSlice(str string) []string {
 	return strings.Split(str, ",")
 }
 
-func toGlobalId (prefix string, id string) string {
-	return base64.StdEncoding.EncodeToString([]byte(prefix + ":" +id))
+func toGlobalId(prefix string, id string) string {
+	return base64.StdEncoding.EncodeToString([]byte(prefix + ":" + id))
 }
