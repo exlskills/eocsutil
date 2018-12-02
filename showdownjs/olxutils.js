@@ -9,8 +9,8 @@ var markdownToXml = function(markdown) {
         finalDemandHints, finalXml, responseTypesMarkdown, responseTypesXML, toXml;
 
     escapeInnerMD = function(inner) {
-        return inner.replace(/(?<=`.*)(&)(?=.*`)/g, '&amp;').replace(/(?<=`.*)(<)(?=.*`)/g, '&lt;').replace(/(?<=`.*)(>)(?=.*`)/g, '&gt;').replace(/(?<=```.*)(&)(?=.*```)/gms, '&amp;').replace(/(?<=```.*)(<)(?=.*```)/gms, '&lt;').replace(/(?<=```.*)(>)(?=.*```)/gms, '&gt;');
-    }
+        return inner.replace(/(?<=`.*)(\|)(?=.*`)/g, '&pipe;').replace(/(?<=`.*)(&)(?=.*`)/g, '&amp;').replace(/(?<=`.*)(<)(?=.*`)/g, '&lt;').replace(/(?<=`.*)(>)(?=.*`)/g, '&gt;').replace(/(?<=```.*)(\|)(?=.*```)/gms, '&pipe;').replace(/(?<=```.*)(&)(?=.*```)/gms, '&amp;').replace(/(?<=```.*)(<)(?=.*```)/gms, '&lt;').replace(/(?<=```.*)(>)(?=.*```)/gms, '&gt;');
+    };
 
     toXml = function(partialMarkdown) {
         var xml = escapeInnerMD(partialMarkdown),

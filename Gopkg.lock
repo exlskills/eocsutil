@@ -21,17 +21,6 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
-  digest = "1:556b75e96f02319585d253d262c4ce5dfdf4b28be474f1e0877c5f4f9b10cf9e"
-  name = "github.com/dlclark/regexp2"
-  packages = [
-    ".",
-    "syntax",
-  ]
-  pruneopts = ""
-  revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
-  version = "v1.1.6"
-
-[[projects]]
   branch = "master"
   digest = "1:5918a8e122613d70243104b8efd5339121bcb8a8a77c1ec4499f1d1e13682ab5"
   name = "github.com/exlinc/golang-utils"
@@ -168,7 +157,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/dlclark/regexp2",
     "github.com/exlinc/golang-utils/envconfig",
     "github.com/exlinc/golang-utils/jsonhttp",
     "github.com/globalsign/mgo",

@@ -1,4 +1,5 @@
 var markdownToXml = require("./olxutils");
+var unescapeMd = require("./unescapemd");
 
 var showdown = require('showdown'),
     showdownOptions = showdown.getDefaultOptions(false);
@@ -63,6 +64,16 @@ app.post('/makehtml', function(req, res, next) {
     var { content } = req.body;
     try {
         var x = sdConverter.makeHtml(content);
+        res.send({content: x})
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/unescapemd', function(req, res, next) {
+    var { content } = req.body;
+    try {
+        var x = unescapeMd(content);
         res.send({content: x})
     } catch (err) {
         next(err);

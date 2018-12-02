@@ -1,4 +1,5 @@
 var markdownToXml = require("./olxutils");
+var unescapeMd = require("./unescapemd");
 
 var yargs = require('yargs'),
     fs = require('fs'),
@@ -121,6 +122,8 @@ function run (makeOpt) {
         to = converter.makeMarkdown(from);
     } else if (makeOpt === 'makeolx') {
         to = markdownToXml(from);
+    } else if (makeOpt === 'unescapemd') {
+        to = unescapeMd(from)
     } else {
         messenger.printError('Invalid conversion type: ' + makeOpt + '. Must be either makehtml or makeolx or makemarkdown.');
         messenger.errorExit(e);

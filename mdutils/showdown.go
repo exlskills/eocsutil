@@ -114,6 +114,13 @@ func MakeMD(html, flavor string) (md string, err error) {
 	return execShowdown("makemarkdown", flavor, html)
 }
 
+func UnescapeMD(md string) (escaped string, err error) {
+	if useREST {
+		return callSDServerRESTAPI("unescapemd", md)
+	}
+	return execShowdown("unescapemd", "github", md)
+}
+
 func runShowdownServerP() {
 	args := []string{
 		// We need this harmony flag for regex negative lookbehind support
