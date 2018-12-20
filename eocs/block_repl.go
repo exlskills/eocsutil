@@ -12,6 +12,7 @@ var validEnvKeys = map[string]struct{}{
 	"java_default_free": {},
 	"python_2_7_free":   {},
 	"python_3_4_free":   {},
+	"javascript_default_free":   {},
 }
 
 type BlockREPL struct {
