@@ -445,7 +445,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		SubscriptionLevel:  1,
 		ViewCount:          0,
 		EnrolledCount:      0,
-		SkillLevel:         1,
+		SkillLevel:         course.GetSkillLevel(),
 		EstMinutes:         estMinutes,
 		PrimaryTopic:       course.GetExtraAttributes()["primary_topic"],
 		CoverURL:           course.GetCourseImage(),
@@ -1055,6 +1055,7 @@ type Course struct {
 	Description       string                      `yaml:"description"`
 	Topics            []string                    `yaml:"topics,flow"`
 	PrimaryTopic      string                      `yaml:"primary_topic"`
+	SkillLevel        string                         `yaml:"skill_level"`
 	InfoMD            string                      `yaml:"info_md"`
 	RepoURL           string                      `yaml:"repo_url"`
 	Weight            int                         `yaml:"weight"`
@@ -1085,6 +1086,18 @@ func (course *Course) GetCourseImage() string {
 
 func (course *Course) GetLanguage() string {
 	return course.Language
+}
+
+func (course *Course) GetSkillLevel() int {
+	if len(course.SkillLevel) == 0 {
+		return 1
+	} else {
+		i, err := strconv.Atoi(course.SkillLevel)
+		if err != nil {
+			return 1
+		}
+		return i
+	}
 }
 
 func (course *Course) GetExtraAttributes() map[string]string {
