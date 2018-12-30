@@ -39,6 +39,7 @@ export ELASTICSEARCH_URI="http://localhost:9200"
 export ELASTICSEARCH_BASE_INDEX="learn"
  
 # Note: `go run` will compile eocsutil on the fly with any code changes, to compile ahead of time, use `go build` and then execute the binary
+# MongoDB URI *must* start with `mongodb:` - version 3.4 style
 go run main.go convert --from-format eocs --from-uri <path to the course files folder> --to-format eocs --to-uri mongodb://localhost:27017
 ```
 

@@ -436,6 +436,10 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		// Ensure default on error
 		weight = 0
 	}
+	skillLevel, err := course.GetSkillLevel()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	esc = &esmodels.Course{
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
@@ -445,7 +449,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		SubscriptionLevel:  1,
 		ViewCount:          0,
 		EnrolledCount:      0,
-		SkillLevel:         course.GetSkillLevel(),
+		SkillLevel:         skillLevel,
 		EstMinutes:         estMinutes,
 		PrimaryTopic:       course.GetExtraAttributes()["primary_topic"],
 		CoverURL:           course.GetCourseImage(),
@@ -888,6 +892,7 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			GithubEditURL: ghEditUrl,
 			// TODO tags
 			Tags: []string{},
+			UpdatedAt: time.Now(),
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
 		Log.Info("Added Card ", vert.DisplayName)
@@ -1088,15 +1093,15 @@ func (course *Course) GetLanguage() string {
 	return course.Language
 }
 
-func (course *Course) GetSkillLevel() int {
+func (course *Course) GetSkillLevel() (i int, err error) {
 	if len(course.SkillLevel) == 0 {
-		return 1
+		return 1, err
 	} else {
 		i, err := strconv.Atoi(course.SkillLevel)
 		if err != nil {
-			return 1
+			return 0, errors.New(fmt.Sprintf("invalid skill_level value in index.yaml: %s", course.SkillLevel))
 		}
-		return i
+		return i, err
 	}
 }
 
