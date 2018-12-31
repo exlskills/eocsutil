@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/exlinc/golang-utils/envconfig"
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,6 @@ func init() {
 	if !conf.IsDebugMode() && !conf.IsProductionMode() {
 		l.Fatal("Invalid EOCS_UTIL variable, it must be either `debug` or `production`")
 	}
-
 }
 
 // Cfg returns the configuration - will panic if the config has not been loaded or is nil (which shouldn't happen as that's implicit in the package init)
@@ -49,7 +49,17 @@ func Cfg() *Config {
 }
 
 func (cfg *Config) GetLogger() *logrus.Logger {
-	var l = logrus.New()
+	//var l = logrus.New()
+	logLvl := logrus.InfoLevel
+	if cfg.IsDebugMode() {
+		logLvl = logrus.DebugLevel
+	}
+	var l = &logrus.Logger{
+		Out:       os.Stderr,
+		Formatter: new(logrus.TextFormatter),
+		Hooks:     make(logrus.LevelHooks),
+		Level:     logLvl,
+	}
 	return l
 }
 

@@ -130,6 +130,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			pcx.course.Chapters = append(pcx.course.Chapters, chap)
 		} else if len(pathParts) == 2 {
 			// Create a new sequential
+			Log.Debug("Sequential ", path)
 			pcx.vertIdx = -1
 			pcx.seqIdx++
 			seq := &Sequential{}
@@ -162,6 +163,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			}
 			pcx.course.Chapters[pcx.chapIdx].Sequentials = append(pcx.course.Chapters[pcx.chapIdx].Sequentials, seq)
 		} else if len(pathParts) == 3 {
+			Log.Debug("Vertical ", path)
 			// Create an index a new vertical
 			pcx.vertIdx++
 			vert := &Vertical{}
@@ -265,6 +267,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".md") {
+			Log.Debug("Parsing HTML %s",filepath.Join(rootPath, fi.Name()))
 			// Parse as `html` block
 			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
 			if err != nil {
@@ -326,6 +329,7 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearchURI string, elasticsearchIndex string) (err error) {
 	sess, err := mgo.DialWithTimeout(mongoURI, time.Duration(10*time.Second))
 	if err != nil {
+		Log.Error("MongoDB error", err)
 		return err
 	}
 	esc, exams, qs, vcs, esearchdocs, err := convertToESCourse(course)
