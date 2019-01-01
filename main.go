@@ -7,6 +7,7 @@ import (
 	"github.com/exlskills/eocsutil/eocsuri"
 	"github.com/exlskills/eocsutil/extfmt"
 	"github.com/exlskills/eocsutil/ghserver"
+	"github.com/exlskills/eocsutil/gitutils"
 	"github.com/exlskills/eocsutil/mdutils"
 	"github.com/exlskills/eocsutil/olx"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -67,6 +68,14 @@ func run() {
 			return
 		}
 		Log.Info("Successfully imported course %s for conversion, now exporting ...", ir.GetDisplayName())
+
+		err = gitutils.SetCourseComponentsTimestamps(*convertFromURI,ir)
+		if err != nil {
+			Log.Errorf("Git reader failed with: %s", err.Error())
+			return
+		}
+
+
 		err = getExtFmtF(*convertToFormat).Export(ir, verifyAndCleanURIF(*convertToURI), *convertForce)
 		if err != nil {
 			Log.Errorf("Course export failed with: %s", err.Error())

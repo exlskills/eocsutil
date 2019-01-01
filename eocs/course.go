@@ -43,6 +43,7 @@ type parserCtx struct {
 var olxProblemChoiceHintsMdRegex = regexp.MustCompile(`(?s-i)<choicehint.+?<\/choicehint>`)
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
+	Log.Infof("Root Directory %s", rootDir)
 	rootCourseYAML, err := getIndexYAML(rootDir)
 	if err != nil {
 		return nil, err
@@ -197,6 +198,9 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			}
 			pcx.swg.Add()
 			go blockExtractionRoutine(pcx.swg, vert, path)
+			for _, b := range vert.Blocks {
+				Log.Debugf("After blockExtractionRoutine. Block type %s, path  %s", b.BlockType, b.FSPath)
+			}
 			pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals = append(pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals, vert)
 			// Since the vertical directory was handled by the 'extractBlocks' func above, we want to keep moving...
 			return filepath.SkipDir
@@ -267,7 +271,7 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".md") {
-			Log.Debug("Parsing HTML %s",filepath.Join(rootPath, fi.Name()))
+			Log.Debug("Parsing HTML %s", filepath.Join(rootPath, fi.Name()))
 			// Parse as `html` block
 			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
 			if err != nil {
@@ -406,7 +410,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 		elasticsearchDocs := 0
 		for _, esd := range esearchdocs {
 			elasticsearchDocs++
-			Log.Infof("Loading doc ID %v type %v title %v", esd.ID, esd.DocType, esd.Title)
+			Log.Debugf("Loading doc ID %v type %v title %v", esd.ID, esd.DocType, esd.Title)
 			_, err = elasticSearchClient.Index().
 				Index(elasticsearchIndex + "_" + course.GetLanguage()).
 				Type("_doc").
@@ -895,11 +899,11 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			},
 			GithubEditURL: ghEditUrl,
 			// TODO tags
-			Tags: []string{},
-			UpdatedAt: time.Now(),
+			Tags:        []string{},
+			UpdatedAt:   vert.UpdatedAt,
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
-		Log.Info("Added Card ", vert.DisplayName)
+		Log.Debug("Added Card ", vert.DisplayName)
 
 		esearchdoc := &esmodels.ElasticsearchGenDoc{
 			ID:          toGlobalId("Card", vert.URLName),
@@ -908,22 +912,22 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			Headline:    "Learn " + vert.DisplayName,
 			TextContent: cardText.String(),
 			CodeContent: cardCode.String(),
-			CourseId: courseID,
-			UnitId:   unitID,
-			SectionId: sequential.URLName,
-			CardId:   vert.URLName,
+			CourseId:    courseID,
+			UnitId:      unitID,
+			SectionId:   sequential.URLName,
+			CardId:      vert.URLName,
 		}
 		esearchdocs = append(esearchdocs, esearchdoc)
 	}
 
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
-		ID:       toGlobalId("Section", section.ID),
-		DocType:  "section",
-		Title:    sequential.DisplayName,
-		Headline: "Learn " + sequential.DisplayName,
-		CourseId: courseID,
-		UnitId:   unitID,
-        SectionId: section.ID,
+		ID:        toGlobalId("Section", section.ID),
+		DocType:   "section",
+		Title:     sequential.DisplayName,
+		Headline:  "Learn " + sequential.DisplayName,
+		CourseId:  courseID,
+		UnitId:    unitID,
+		SectionId: section.ID,
 	}
 	esearchdocs = append(esearchdocs, esearchdoc)
 	return
@@ -1064,7 +1068,7 @@ type Course struct {
 	Description       string                      `yaml:"description"`
 	Topics            []string                    `yaml:"topics,flow"`
 	PrimaryTopic      string                      `yaml:"primary_topic"`
-	SkillLevel        string                         `yaml:"skill_level"`
+	SkillLevel        string                      `yaml:"skill_level"`
 	InfoMD            string                      `yaml:"info_md"`
 	RepoURL           string                      `yaml:"repo_url"`
 	Weight            int                         `yaml:"weight"`

@@ -86,6 +86,10 @@ func (block *Block) GetBlockType() string {
 	return block.BlockType
 }
 
+func (block *Block) GetFSPath() string {
+	return block.FSPath
+}
+
 func (block *Block) GetContentMD() (string, error) {
 	// We always have MD
 	return block.Markdown, nil
