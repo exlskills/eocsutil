@@ -61,6 +61,8 @@ func run() {
 			}
 			return
 		}
+
+		// This is non-MongoDB only flow below
 		Log.Info("Importing course for conversion ...")
 		ir, err := getExtFmtF(*convertFromFormat).Import(verifyAndCleanURIF(*convertFromURI))
 		if err != nil {
@@ -69,7 +71,7 @@ func run() {
 		}
 		Log.Info("Successfully imported course %s for conversion, now exporting ...", ir.GetDisplayName())
 
-		err = gitutils.SetCourseComponentsTimestamps(*convertFromURI,ir)
+		err = gitutils.SetCourseComponentsTimestamps(*convertFromURI, ir)
 		if err != nil {
 			Log.Errorf("Git reader failed with: %s", err.Error())
 			return

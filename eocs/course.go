@@ -164,7 +164,6 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			}
 			pcx.course.Chapters[pcx.chapIdx].Sequentials = append(pcx.course.Chapters[pcx.chapIdx].Sequentials, seq)
 		} else if len(pathParts) == 3 {
-			Log.Debug("Vertical ", path)
 			// Create an index a new vertical
 			pcx.vertIdx++
 			vert := &Vertical{}
@@ -172,7 +171,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			if err != nil {
 				return err
 			}
-			Log.Info("Adding vertical: ", dispName)
+			Log.Debug("Adding vertical: ", dispName)
 			if indxBytes, err := getIndexYAML(path); err == nil {
 				err = yaml.Unmarshal(indxBytes, &vert)
 				if err != nil {
@@ -271,7 +270,6 @@ func extractBlocksFromVerticalDirectory(rootPath string) (blks []*Block, err err
 				FSPath:      filepath.Join(append(rootPathParts, fi.Name())...),
 			})
 		} else if strings.HasSuffix(fi.Name(), ".md") {
-			Log.Debug("Parsing HTML %s", filepath.Join(rootPath, fi.Name()))
 			// Parse as `html` block
 			byteContents, err := ioutil.ReadFile(filepath.Join(rootPath, fi.Name()))
 			if err != nil {
@@ -515,7 +513,7 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 }
 
 func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("Extracting ESUnit Features for ", chap.DisplayName)
+	Log.Debug("Extracting ESUnit Features for ", chap.DisplayName)
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
 	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
@@ -777,7 +775,7 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 // extractESSectionFeatures iterates over sequential.Verticals that represents the lowest level in the topic structure hierarchy
 // Each element in sequential.Verticals contains one set of vert.Blocks comprising one Card
 func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("Extracting ESSection Features for ", sequential.DisplayName)
+	Log.Debug("Extracting ESSection Features for ", sequential.DisplayName)
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)

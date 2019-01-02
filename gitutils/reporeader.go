@@ -4,14 +4,13 @@ import (
 	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/ir"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"time"
 )
 
 var Log = config.Cfg().GetLogger()
 
 func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error) {
-
+	Log.Debug("In SetCourseComponentsTimestamps")
 	r, err := git.PlainOpen(repoPath)
 
 	if err != nil {
@@ -27,25 +26,33 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 				for _, b := range vert.GetBlocks() {
 					if b.GetBlockType() == "html" {
 						fileName := b.GetFSPath()
-						Log.Debugf("Local Git File " + fileName)
-						commitsIter, err := r.Log(&git.LogOptions{FileName: &fileName, Order: git.LogOrderDFSPost,})
+						Log.Debugf("Local Git File %s", fileName)
+						commitsIter, err := r.Log(&git.LogOptions{FileName: &fileName, Order: git.LogOrderCommitterTime,})
 						if err != nil {
-							Log.Error("Local Git Commits Issue for %s %v", fileName, err)
+							Log.Errorf("Local Git Commits Issue for %s %v", fileName, err)
 							return err
 						}
-						err = commitsIter.ForEach(func(c *object.Commit) error {
-							if createdAt.IsZero() || createdAt.After(c.Author.When) {
-								createdAt = c.Author.When
+						for {
+							commit, err := commitsIter.Next()
+							if err != nil {
+								break
 							}
-							if updatedAt.IsZero() || updatedAt.Before(c.Author.When) {
-								updatedAt = c.Author.When
+							if createdAt.IsZero() || createdAt.After(commit.Author.When) {
+								createdAt = commit.Author.When
 							}
-							return nil
-						})
+							if updatedAt.IsZero() || updatedAt.Before(commit.Author.When) {
+								updatedAt = commit.Author.When
+							}
+
+							// Uncomment this to get createdAt
+							break
+						}
 					}
 				}
+				Log.Debugf("UpdatedAt %s", updatedAt)
+
 				if (!createdAt.IsZero()) {
-					// Future
+					// Future, see the comment above
 				}
 				if (!updatedAt.IsZero()) {
 					vert.SetUpdatedAt(updatedAt)
