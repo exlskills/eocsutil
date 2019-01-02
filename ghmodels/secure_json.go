@@ -30,6 +30,7 @@ func GHSecureJSONDecodeAndCatchForAPI(w http.ResponseWriter, r *http.Request, hu
 		jsonhttp.JSONForbiddenError(w, "Invalid request signature", "")
 		return errors.New("invalid signature")
 	}
+	// fmt.Println(string(reqBody))
 	err := json.Unmarshal(reqBody, &outStruct)
 	if err != nil {
 		jsonhttp.JSONBadRequestError(w, "Invalid JSON", "")

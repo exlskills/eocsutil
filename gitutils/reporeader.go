@@ -64,3 +64,42 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 
 	return
 }
+
+func IsRepoContentUpdated(repoPath string) (contentChanged bool, err error) {
+	Log.Debug("In IsRepoContentUpdated")
+
+	r, err := git.PlainOpen(repoPath)
+	if err != nil {
+		Log.Error("Local Git Repo Open Issue", err)
+		return false, err
+	}
+
+	w, err := r.Worktree()
+	if err != nil {
+		Log.Error("Local Git Repo Worktree Issue", err)
+		return false, err
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		Log.Error("Local Git Repo Worktree Status Issue", err)
+		return false, err
+	}
+
+	if status.IsClean() {
+		Log.Debug("No changes")
+		return false, nil
+	}
+
+	// Add All Files
+	for k, _ := range status {
+		Log.Debug("Adding File ", k)
+		_, err = w.Add(k)
+		if err != nil {
+			Log.Error("Local Git Repo Add File Issue", err)
+			return true, err
+		}
+	}
+
+	return true, nil
+}

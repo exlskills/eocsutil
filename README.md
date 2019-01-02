@@ -69,5 +69,5 @@ Sometimes there's an issue with showdownjs nodejs service that eocsutil spawns f
 
 ### Showdownjs port conflict
 
-Interally, we use a REST API server on http://localhost:6222 to communicate with showdownjs. We're working to select a port on the fly, but until that feature is complete, you will have to either (a) modify eocsutil to use a different port or (b) temporarily stop whatever process is using port 6222 on your machine.
+Internally, we use a REST API server on http://localhost:6222 to communicate with showdownjs. We're working to select a port on the fly, but until that feature is complete, you will have to either (a) modify eocsutil to use a different port or (b) temporarily stop whatever process is using port 6222 on your machine.
 
