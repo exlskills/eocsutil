@@ -87,7 +87,7 @@ func IsRepoContentUpdated(repoPath string) (contentChanged bool, err error) {
 	}
 
 	if status.IsClean() {
-		Log.Debug("No changes")
+		Log.Info("No changes to Git Repo content")
 		return false, nil
 	}
 

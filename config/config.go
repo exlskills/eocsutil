@@ -18,8 +18,6 @@ type Config struct {
 	GHServerMongoURI       string `envconfig:"GH_SERVER_MONGO_URI"`
 	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
 	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX" default:"learn"`
-	GitUser                string `envconfig:"GIT_USER" default:"Exlskills"`
-	GitUserEmail           string `envconfig:"GIT_USER_EMAIL" default:"info@exlinc.com"`
 	GitUserToken           string `envconfig:"GIT_USER_TOKEN"`
 	GitAutoGenCommitMsg    string `envconfig:"GIT_AUTOGEN_COMMIT_MSG" default:"auto#gen"`
 }

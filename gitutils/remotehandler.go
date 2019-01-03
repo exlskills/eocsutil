@@ -2,6 +2,7 @@ package gitutils
 
 import (
 	"github.com/exlskills/eocsutil/config"
+	"github.com/exlskills/eocsutil/ghmodels"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -9,6 +10,7 @@ import (
 )
 
 func CloneRepo(cloneURL string, targetDir string) (err error) {
+	Log.Infof("Cloning %s into %s", cloneURL, targetDir)
 	_, err = git.PlainClone(targetDir, false, &git.CloneOptions{
 		URL:               cloneURL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
@@ -16,7 +18,7 @@ func CloneRepo(cloneURL string, targetDir string) (err error) {
 	return err
 }
 
-func CommitAndPush(repoPath string, commitMsg string) (err error) {
+func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		Log.Error("Local Git Repo Open Issue", err)
@@ -29,10 +31,10 @@ func CommitAndPush(repoPath string, commitMsg string) (err error) {
 		return err
 	}
 
-	commit, err := w.Commit("auto#gen", &git.CommitOptions{
+	commit, err := w.Commit(config.Cfg().GitAutoGenCommitMsg, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  config.Cfg().GitUser,
-			Email: config.Cfg().GitUserEmail,
+			Name:  author.Name,
+			Email: author.Email,
 			When:  time.Now(),
 		},
 	})
@@ -41,7 +43,8 @@ func CommitAndPush(repoPath string, commitMsg string) (err error) {
 		return err
 	}
 
-	Log.Debug("Generated Commit ", commit)
+	Log.Info("Generated auto Commit ")
+	Log.Debug("Commit ", commit)
 	err = r.Push(&git.PushOptions{Auth: &http.BasicAuth{
 		Username: "abc123", // anything except an empty string
 		Password: config.Cfg().GitUserToken,

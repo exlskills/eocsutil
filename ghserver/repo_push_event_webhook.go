@@ -12,50 +12,75 @@ import (
 	"strings"
 )
 
-func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
+func repoPushEventWebhookLauncher(w http.ResponseWriter, r *http.Request) {
+	Log.Debug("In repoPushEventWebhookLauncher")
 	reqObj := ghmodels.RepoPushEventRequest{}
 	err := ghmodels.GHSecureJSONDecodeAndCatchForAPI(w, r, config.Cfg().GHWebhookSecret, &reqObj)
 	if err != nil {
+		Log.Error("Issue while reading request ", err)
+		jsonhttp.JSONInternalError(w, "Invalid Request", "")
 		return
 	}
+	go repoPushEventWebhookProcessor(reqObj)
+	jsonhttp.JSONSuccess(w, nil, "Ack Receipt")
+	return
+}
+
+func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
+	Log.Debug("In repoPushEventWebhook")
+	reqObj := ghmodels.RepoPushEventRequest{}
+	err := ghmodels.GHSecureJSONDecodeAndCatchForAPI(w, r, config.Cfg().GHWebhookSecret, &reqObj)
+	if err != nil {
+		Log.Error("Issue while reading request ", err)
+		jsonhttp.JSONInternalError(w, "Invalid Request", "")
+		return
+	}
+	message, err := repoPushEventWebhookProcessor(reqObj)
+	if err != nil {
+		jsonhttp.JSONInternalError(w, message, "")
+	} else {
+		jsonhttp.JSONSuccess(w, nil, message)
+	}
+	return
+}
+
+func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest) (message string, err error){
+	Log.Infof("From %s; Head Commit %s ", reqObj.Repository.Name, reqObj.HeadCommit.ID)
 	if reqObj.Ref != "refs/heads/master" {
 		Log.Info("Skipping push on ref: ", reqObj.Ref)
-		jsonhttp.JSONSuccess(w, nil, "No-op, must be master branch to sync")
-		return
+		return "No-op, must be master branch to sync", nil
 	}
 
 	if len(reqObj.Commits) < 1 {
 		Log.Info("Skipping. No commits")
-		jsonhttp.JSONSuccess(w, nil, "No-op, must be commit-based")
-		return
+		return"No-op, must be commit-based", nil
 	}
 
 	hasRealCommits := false
+	commitAuthor := ghmodels.CommitAuthor{}
 	for _, commit := range reqObj.Commits {
 		if !strings.Contains(commit.Message, config.Cfg().GitAutoGenCommitMsg) {
 			hasRealCommits = true
+			commitAuthor = commit.Author
 			break
 		}
 	}
 	if !hasRealCommits {
 		Log.Info("Skipping. Auto-gen commits only")
-		jsonhttp.JSONSuccess(w, nil, "No-op, auto#gen commit")
-		return
+		return "No-op, auto#gen commit", nil
 	}
 
 	rootDir, err := ioutil.TempDir("", "eocsutil-repo-dl-")
 	if err != nil {
 		Log.Error("An error occurred creating the temp directory: ", err)
-		jsonhttp.JSONInternalError(w, "An error occurred creating the temp directory", "")
-		return
+		return "An error occurred creating the temp directory", err
 	}
 	defer os.RemoveAll(rootDir)
 
 	err = gitutils.CloneRepo(reqObj.Repository.CloneURL, rootDir)
 	if err != nil {
 		Log.Error("An error occurred cloning repo: ", err)
-		jsonhttp.JSONInternalError(w, "An error occurred cloning repo", "")
-		return
+		return"An error occurred cloning repo", err
 	}
 
 	/*
@@ -82,25 +107,21 @@ func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
 	err = eocs.NewEOCSFormat().Push(rootDir, config.Cfg().GHServerMongoURI)
 	if err != nil {
 		Log.Errorf("Course push failed: %s", err.Error())
-		jsonhttp.JSONInternalError(w, "An error occurred importing the course", "")
-		return
+		return "An error occurred importing the course", err
 	}
 
 	repoChanged, err := gitutils.IsRepoContentUpdated(rootDir)
 	if err != nil {
 		Log.Errorf("Course push failed: %s", err.Error())
-		jsonhttp.JSONInternalError(w, "An error occurred checking local repo for changes", "")
-		return
+		return "An error occurred checking local repo for changes", err
 	}
 	if repoChanged {
-		err = gitutils.CommitAndPush(rootDir,config.Cfg().GitAutoGenCommitMsg)
+		err = gitutils.CommitAndPush(rootDir, commitAuthor)
 		if err != nil {
 			Log.Error("An error occurred committing and pushing repo changes: ", err)
-			jsonhttp.JSONInternalError(w, "An error occurred committing and pushing repo changes", "")
-			return
+			return "An error occurred committing and pushing repo changes", err
 		}
 	}
 
-	jsonhttp.JSONSuccess(w, nil, "Successfully imported the course")
-	return
+	return"Successfully imported the course", nil
 }

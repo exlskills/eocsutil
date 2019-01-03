@@ -12,7 +12,8 @@ func createRouter() http.Handler {
 	// V1 Routes
 	v1Router := router.PathPrefix("/v1").Subrouter()
 	v1Router.HandleFunc("/", index).Methods("GET")
-	v1Router.HandleFunc("/github/repo-push-event", repoPushEventWebhook).Methods("POST")
+	v1Router.HandleFunc("/github/repo-push-event", repoPushEventWebhookLauncher).Methods("POST")
+	v1Router.HandleFunc("/github/repo-push-event-and-wait", repoPushEventWebhook).Methods("POST")
 
 	return Use(router.ServeHTTP, RecoverAndLog)
 }
