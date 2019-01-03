@@ -31,7 +31,7 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
 		return err
 	}
 
-	commit, err := w.Commit(config.Cfg().GitAutoGenCommitMsg, &git.CommitOptions{
+	commit, err := w.Commit(config.Cfg().GHAutoGenCommitMsg, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  author.Name,
 			Email: author.Email,
@@ -47,7 +47,7 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
 	Log.Debug("Commit ", commit)
 	err = r.Push(&git.PushOptions{Auth: &http.BasicAuth{
 		Username: "abc123", // anything except an empty string
-		Password: config.Cfg().GitUserToken,
+		Password: config.Cfg().GHUserToken,
 	},})
 
 	return err

@@ -59,7 +59,7 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest) (messag
 	hasRealCommits := false
 	commitAuthor := ghmodels.CommitAuthor{}
 	for _, commit := range reqObj.Commits {
-		if !strings.Contains(commit.Message, config.Cfg().GitAutoGenCommitMsg) {
+		if !strings.Contains(commit.Message, config.Cfg().GHAutoGenCommitMsg) {
 			hasRealCommits = true
 			commitAuthor = commit.Author
 			break

@@ -16,10 +16,10 @@ type Config struct {
 	GHServerAddr           string `envconfig:"GH_SERVER_ADDR" default:"0.0.0.0"`
 	GHServerPort           string `envconfig:"GH_SERVER_PORT" default:"3344"`
 	GHServerMongoURI       string `envconfig:"GH_SERVER_MONGO_URI"`
+	GHUserToken            string `envconfig:"GH_USER_TOKEN"`
+	GHAutoGenCommitMsg     string `envconfig:"GH_AUTOGEN_COMMIT_MSG" default:"auto#gen"`
 	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
 	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX" default:"learn"`
-	GitUserToken           string `envconfig:"GIT_USER_TOKEN"`
-	GitAutoGenCommitMsg    string `envconfig:"GIT_AUTOGEN_COMMIT_MSG" default:"auto#gen"`
 }
 
 var conf *Config
