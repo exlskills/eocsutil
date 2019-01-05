@@ -169,6 +169,14 @@
   revision = "5582a674300c427060d06980c142aeb52ed20040"
 
 [[projects]]
+  branch = "master"
+  digest = "1:43e4ac1c95e569f24c80f9ee90c543fbeb61024c69cc731ccf33303d915488eb"
+  name = "github.com/scorredoira/email"
+  packages = ["."]
+  pruneopts = ""
+  revision = "c1787f8317a847a7adc13673be80723268e6e639"
+
+[[projects]]
   digest = "1:3962f553b77bf6c03fc07cd687a22dd3b00fe11aa14d31194f5505f5bb65cdc8"
   name = "github.com/sergi/go-diff"
   packages = ["diffmatchpatch"]
@@ -366,6 +374,7 @@
     "github.com/olivere/elastic",
     "github.com/pkg/errors",
     "github.com/remeh/sizedwaitgroup",
+    "github.com/scorredoira/email",
     "github.com/sirupsen/logrus",
     "gopkg.in/alecthomas/kingpin.v2",
     "gopkg.in/src-d/go-git.v4",

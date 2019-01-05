@@ -20,6 +20,12 @@ type Config struct {
 	GHAutoGenCommitMsg     string `envconfig:"GH_AUTOGEN_COMMIT_MSG" default:"auto#gen"`
 	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
 	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX" default:"learn"`
+	SMTPFromName           string `envconfig:"SMTP_FROM_NAME" default:"EOCS Course Loader Service"`
+	SMTPFromAddress        string `envconfig:"SMTP_FROM_ADDRESS" default:"noreply@exlskills.com"`
+	SMTPHost               string `envconfig:"SMTP_HOST" default:"smtp.sendgrid.net"`
+	SMTPConnectionString   string `envconfig:"SMTP_CONNECTION_STRING" default:"smtp.sendgrid.net:587"`
+	SMTPUserName           string `envconfig:"SMTP_USER_NAME" default:"apikey"`
+	SMTPPassword           string `envconfig:"SMTP_PASSWORD"`
 }
 
 var conf *Config
