@@ -69,6 +69,10 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 	Log.Info("Returned from course directory scanning. Waiting for workers to return ...")
 	pcx.swg.Wait()
 	Log.Info("All course content workers returned.")
+	err = checkWalkErrors(*c)
+	if err != nil {
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -217,7 +221,13 @@ func blockExtractionRoutine(wg *sizedwaitgroup.SizedWaitGroup, vert *Vertical, p
 	var err error
 	vert.Blocks, err = extractBlocksFromVerticalDirectory(path)
 	if err != nil {
-		Log.Fatalf("Encountered fatal error processing blocks for vertical %s (ID: %s), error: %s", vert.DisplayName, vert.URLName, err.Error())
+		// Log.Fatalf("Encountered fatal error processing blocks for vertical %s (ID: %s), error: %s", vert.DisplayName, vert.URLName, err.Error())
+		// Need to ensure a clean program exit as well as continue validation
+		// Append a dummy ERROR Block
+		vert.Blocks = append(vert.Blocks, &Block{
+			BlockType: "ERROR",
+			Markdown:  fmt.Sprintf("%v", err),
+		})
 	}
 }
 
@@ -313,10 +323,10 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 		return nil, err
 	}
 	if !rpl.IsAPIVersionValid() {
-		return nil, errors.New("eocs: invalid repl api_version")
+		return nil, errors.New(fmt.Sprintf("eocs: invalid repl api_version %v", rpl.APIVersion))
 	}
 	if !rpl.IsEnvironmentKeyValid() {
-		return nil, errors.New("eocs: invalid repl environment_key")
+		return nil, errors.New("eocs: invalid repl environment_key " + rpl.EnvironmentKey)
 	}
 	err = rpl.LoadFilesFromFS(rootPath)
 	if err != nil {
@@ -427,6 +437,26 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	}
 
 	return
+}
+
+func checkWalkErrors(c Course) error {
+	var errorText strings.Builder
+	for _, chapter := range c.Chapters {
+		for _, sequential := range chapter.Sequentials {
+			for _, vertical := range sequential.Verticals {
+				for _, block := range vertical.Blocks {
+					if block.BlockType == "ERROR" {
+						errorText.WriteString(fmt.Sprintf("Error processing blocks for vertical %s (ID: %s), error: %s ", vertical.DisplayName, vertical.URLName, block.Markdown))
+					}
+				}
+			}
+		}
+	}
+	errorS := errorText.String()
+	if len(errorS) > 0 {
+		return errors.New(errorS)
+	}
+	return nil
 }
 
 // convertToESCourse takes the Course object as populated in preceding steps and generates objects corresponding to the ES course storage model:
@@ -897,8 +927,8 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			},
 			GithubEditURL: ghEditUrl,
 			// TODO tags
-			Tags:        []string{},
-			UpdatedAt:   vert.UpdatedAt,
+			Tags:      []string{},
+			UpdatedAt: vert.UpdatedAt,
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
 		Log.Debug("Added Card ", vert.DisplayName)
