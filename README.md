@@ -39,6 +39,7 @@ export ELASTICSEARCH_URI="http://localhost:9200"
 export ELASTICSEARCH_BASE_INDEX="learn"
  
 # Note: `go run` will compile eocsutil on the fly with any code changes, to compile ahead of time, use `go build` and then execute the binary
+# MongoDB URI *must* start with `mongodb:` - version 3.4 style
 go run main.go convert --from-format eocs --from-uri <path to the course files folder> --to-format eocs --to-uri mongodb://localhost:27017
 ```
 
@@ -68,5 +69,5 @@ Sometimes there's an issue with showdownjs nodejs service that eocsutil spawns f
 
 ### Showdownjs port conflict
 
-Interally, we use a REST API server on http://localhost:6222 to communicate with showdownjs. We're working to select a port on the fly, but until that feature is complete, you will have to either (a) modify eocsutil to use a different port or (b) temporarily stop whatever process is using port 6222 on your machine.
+Internally, we use a REST API server on http://localhost:6222 to communicate with showdownjs. We're working to select a port on the fly, but until that feature is complete, you will have to either (a) modify eocsutil to use a different port or (b) temporarily stop whatever process is using port 6222 on your machine.
 

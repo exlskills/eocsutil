@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func verticalsToIRVerticals(verts []*Vertical) []ir.Vertical {
@@ -41,6 +42,7 @@ type Vertical struct {
 	DisplayName string     `xml:"display_name,attr"`
 	ExtraAttrs  []xml.Attr `xml:",any,attr"`
 	Blocks      []*Block   `xml:",any"`
+	UpdatedAt   time.Time
 }
 
 func (vert *Vertical) resolveRecursive(rootDir string) (err error) {
@@ -83,4 +85,8 @@ func (vert *Vertical) GetExtraAttributes() map[string]string {
 
 func (vert *Vertical) GetBlocks() []ir.Block {
 	return blocksToIRBlocks(vert.Blocks)
+}
+
+func (vert *Vertical) SetUpdatedAt(updatedAt time.Time)  {
+	vert.UpdatedAt = updatedAt
 }

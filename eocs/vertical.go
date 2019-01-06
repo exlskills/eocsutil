@@ -2,6 +2,7 @@ package eocs
 
 import (
 	"github.com/exlskills/eocsutil/ir"
+	"time"
 )
 
 func verticalsToIRVerticals(verts []*Vertical) []ir.Vertical {
@@ -29,9 +30,10 @@ func appendIRVerticalsToSequential(seq *Sequential, verts []ir.Vertical) (err er
 }
 
 type Vertical struct {
-	URLName     string   `yaml:"url_name"`
-	DisplayName string   `yaml:"display_name"`
-	Blocks      []*Block `yaml:"-"`
+	URLName     string    `yaml:"url_name"`
+	DisplayName string    `yaml:"display_name"`
+	Blocks      []*Block  `yaml:"-"`
+	UpdatedAt   time.Time `yaml:"-"`
 }
 
 func (vert *Vertical) GetDisplayName() string {
@@ -48,4 +50,8 @@ func (vert *Vertical) GetExtraAttributes() map[string]string {
 
 func (vert *Vertical) GetBlocks() []ir.Block {
 	return blocksToIRBlocks(vert.Blocks)
+}
+
+func (vert *Vertical) SetUpdatedAt(updatedAt time.Time)  {
+	vert.UpdatedAt = updatedAt
 }

@@ -43,6 +43,7 @@ type parserCtx struct {
 var olxProblemChoiceHintsMdRegex = regexp.MustCompile(`(?s-i)<choicehint.+?<\/choicehint>`)
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
+	Log.Infof("Root Directory %s", rootDir)
 	rootCourseYAML, err := getIndexYAML(rootDir)
 	if err != nil {
 		return nil, err
@@ -68,6 +69,10 @@ func resolveCourseRecursive(rootDir string) (*Course, error) {
 	Log.Info("Returned from course directory scanning. Waiting for workers to return ...")
 	pcx.swg.Wait()
 	Log.Info("All course content workers returned.")
+	err = checkWalkErrors(*c)
+	if err != nil {
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -130,6 +135,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			pcx.course.Chapters = append(pcx.course.Chapters, chap)
 		} else if len(pathParts) == 2 {
 			// Create a new sequential
+			Log.Debug("Sequential ", path)
 			pcx.vertIdx = -1
 			pcx.seqIdx++
 			seq := &Sequential{}
@@ -169,7 +175,7 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			if err != nil {
 				return err
 			}
-			Log.Info("Adding vertical: ", dispName)
+			Log.Debug("Adding vertical: ", dispName)
 			if indxBytes, err := getIndexYAML(path); err == nil {
 				err = yaml.Unmarshal(indxBytes, &vert)
 				if err != nil {
@@ -195,6 +201,9 @@ func courseWalkFunc(rootDir string, pcx *parserCtx) filepath.WalkFunc {
 			}
 			pcx.swg.Add()
 			go blockExtractionRoutine(pcx.swg, vert, path)
+			for _, b := range vert.Blocks {
+				Log.Debugf("After blockExtractionRoutine. Block type %s, path  %s", b.BlockType, b.FSPath)
+			}
 			pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals = append(pcx.course.Chapters[pcx.chapIdx].Sequentials[pcx.seqIdx].Verticals, vert)
 			// Since the vertical directory was handled by the 'extractBlocks' func above, we want to keep moving...
 			return filepath.SkipDir
@@ -212,7 +221,13 @@ func blockExtractionRoutine(wg *sizedwaitgroup.SizedWaitGroup, vert *Vertical, p
 	var err error
 	vert.Blocks, err = extractBlocksFromVerticalDirectory(path)
 	if err != nil {
-		Log.Fatalf("Encountered fatal error processing blocks for vertical %s (ID: %s), error: %s", vert.DisplayName, vert.URLName, err.Error())
+		// Log.Fatalf("Encountered fatal error processing blocks for vertical %s (ID: %s), error: %s", vert.DisplayName, vert.URLName, err.Error())
+		// Need to ensure a clean program exit as well as continue validation
+		// Append a dummy ERROR Block
+		vert.Blocks = append(vert.Blocks, &Block{
+			BlockType: "ERROR",
+			Markdown:  fmt.Sprintf("%v", err),
+		})
 	}
 }
 
@@ -308,10 +323,10 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 		return nil, err
 	}
 	if !rpl.IsAPIVersionValid() {
-		return nil, errors.New("eocs: invalid repl api_version")
+		return nil, errors.New(fmt.Sprintf("eocs: invalid repl api_version %v", rpl.APIVersion))
 	}
 	if !rpl.IsEnvironmentKeyValid() {
-		return nil, errors.New("eocs: invalid repl environment_key")
+		return nil, errors.New("eocs: invalid repl environment_key " + rpl.EnvironmentKey)
 	}
 	err = rpl.LoadFilesFromFS(rootPath)
 	if err != nil {
@@ -326,6 +341,7 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearchURI string, elasticsearchIndex string) (err error) {
 	sess, err := mgo.DialWithTimeout(mongoURI, time.Duration(10*time.Second))
 	if err != nil {
+		Log.Error("MongoDB error", err)
 		return err
 	}
 	esc, exams, qs, vcs, esearchdocs, err := convertToESCourse(course)
@@ -402,7 +418,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 		elasticsearchDocs := 0
 		for _, esd := range esearchdocs {
 			elasticsearchDocs++
-			Log.Infof("Loading doc ID %v type %v title %v", esd.ID, esd.DocType, esd.Title)
+			Log.Debugf("Loading doc ID %v type %v title %v", esd.ID, esd.DocType, esd.Title)
 			_, err = elasticSearchClient.Index().
 				Index(elasticsearchIndex + "_" + course.GetLanguage()).
 				Type("_doc").
@@ -423,6 +439,26 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	return
 }
 
+func checkWalkErrors(c Course) error {
+	var errorText strings.Builder
+	for _, chapter := range c.Chapters {
+		for _, sequential := range chapter.Sequentials {
+			for _, vertical := range sequential.Verticals {
+				for _, block := range vertical.Blocks {
+					if block.BlockType == "ERROR" {
+						errorText.WriteString(fmt.Sprintf("Error processing blocks for vertical %s (ID: %s), error: %s ", vertical.DisplayName, vertical.URLName, block.Markdown))
+					}
+				}
+			}
+		}
+	}
+	errorS := errorText.String()
+	if len(errorS) > 0 {
+		return errors.New(errorS)
+	}
+	return nil
+}
+
 // convertToESCourse takes the Course object as populated in preceding steps and generates objects corresponding to the ES course storage model:
 // Four objects for the MongoDB collections and one object for the Elasticsearch index
 func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
@@ -436,6 +472,10 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		// Ensure default on error
 		weight = 0
 	}
+	skillLevel, err := course.GetSkillLevel()
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
 	esc = &esmodels.Course{
 		ID:                 course.URLName,
 		IsOrganizationOnly: false,
@@ -445,7 +485,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		SubscriptionLevel:  1,
 		ViewCount:          0,
 		EnrolledCount:      0,
-		SkillLevel:         1,
+		SkillLevel:         skillLevel,
 		EstMinutes:         estMinutes,
 		PrimaryTopic:       course.GetExtraAttributes()["primary_topic"],
 		CoverURL:           course.GetCourseImage(),
@@ -503,7 +543,7 @@ func extractESFeatures(course *Course) (units []esmodels.Unit, exams []*esmodels
 }
 
 func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter, nChaps int, lang string) (unit esmodels.Unit, exams []*esmodels.Exam, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("Extracting ESUnit Features for ", chap.DisplayName)
+	Log.Debug("Extracting ESUnit Features for ", chap.DisplayName)
 	unit.ID = chap.URLName
 	unit.Title = esmodels.NewIntlStringWrapper(chap.DisplayName, lang)
 	unit.Headline = esmodels.NewIntlStringWrapper("Learn "+chap.DisplayName, lang)
@@ -765,7 +805,7 @@ func olxChoicesToESQDataArr(choices []olxproblems.Choice, lang string) ([]esmode
 // extractESSectionFeatures iterates over sequential.Verticals that represents the lowest level in the topic structure hierarchy
 // Each element in sequential.Verticals contains one set of vert.Blocks comprising one Card
 func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int, sequential *Sequential, lang string) (section esmodels.Section, qs []*esmodels.Question, vc []*esmodels.VersionedContent, esearchdocs []*esmodels.ElasticsearchGenDoc, err error) {
-	Log.Info("Extracting ESSection Features for ", sequential.DisplayName)
+	Log.Debug("Extracting ESSection Features for ", sequential.DisplayName)
 	section.ID = sequential.URLName
 	section.Index = index + 1
 	section.Title = esmodels.NewIntlStringWrapper(sequential.DisplayName, lang)
@@ -898,10 +938,11 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 			},
 			GithubEditURL: ghEditUrl,
 			// TODO tags
-			Tags: []string{},
+			Tags:      []string{},
+			UpdatedAt: vert.UpdatedAt,
 		}
 		section.Cards.Cards = append(section.Cards.Cards, card)
-		Log.Info("Added Card ", vert.DisplayName)
+		Log.Debug("Added Card ", vert.DisplayName)
 
 		esearchdoc := &esmodels.ElasticsearchGenDoc{
 			ID:          toGlobalId("Card", vert.URLName),
@@ -1066,6 +1107,7 @@ type Course struct {
 	Description       string                      `yaml:"description"`
 	Topics            []string                    `yaml:"topics,flow"`
 	PrimaryTopic      string                      `yaml:"primary_topic"`
+	SkillLevel        string                      `yaml:"skill_level"`
 	InfoMD            string                      `yaml:"info_md"`
 	RepoURL           string                      `yaml:"repo_url"`
 	Weight            int                         `yaml:"weight"`
@@ -1096,6 +1138,18 @@ func (course *Course) GetCourseImage() string {
 
 func (course *Course) GetLanguage() string {
 	return course.Language
+}
+
+func (course *Course) GetSkillLevel() (i int, err error) {
+	if len(course.SkillLevel) == 0 {
+		return 1, err
+	} else {
+		i, err := strconv.Atoi(course.SkillLevel)
+		if err != nil {
+			return 0, errors.New(fmt.Sprintf("invalid skill_level value in index.yaml: %s", course.SkillLevel))
+		}
+		return i, err
+	}
 }
 
 func (course *Course) GetExtraAttributes() map[string]string {

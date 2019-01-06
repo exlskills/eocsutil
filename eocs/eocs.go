@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/eocsuri"
+	"github.com/exlskills/eocsutil/gitutils"
 	"github.com/exlskills/eocsutil/ir"
 	"os"
 )
@@ -52,5 +53,11 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 	if config.Cfg().MgoDBName == "" {
 		return errors.New("for EOCS course conversion the MGO_DB_NAME environment variable must be set to the name of the MongoDB database to write to")
 	}
+	err = gitutils.SetCourseComponentsTimestamps(fromUri, course)
+	if err != nil {
+		Log.Errorf("Git reader failed with: %s", err.Error())
+		return err
+	}
+
 	return upsertCourseRecursive(course, toUri, config.Cfg().MgoDBName, config.Cfg().ElasticsearchURI, config.Cfg().ElasticsearchBaseIndex)
 }

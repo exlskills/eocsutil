@@ -138,6 +138,10 @@ func (block *Block) GetURLName() string {
 	return block.URLName
 }
 
+func (block *Block) GetFSPath() string {
+	return block.Filename
+}
+
 func (block *Block) GetBlockType() string {
 	return block.ContentType
 }
@@ -162,3 +166,4 @@ func (block *Block) GetContentOLX() (string, error) {
 func (block *Block) GetExtraAttributes() map[string]string {
 	return xmlAttrsToMap(block.ExtraAttrs)
 }
+
