@@ -149,8 +149,13 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 			return "An error occurred committing and pushing repo changes", err
 		}
 	}
-	if mode == asyncMode {
-		smtputils.SendEmail(reqObj.HeadCommit.Author.Email, okSubject, loadHeaderString+"<br>Process completed successfully")
+
+	msg := "Successfully imported the course"
+	if repoChanged {
+		msg = msg + ". Remote Git Repository updated! Run GIT PULL"
 	}
-	return "Successfully imported the course", nil
+	if mode == asyncMode {
+		smtputils.SendEmail(reqObj.HeadCommit.Author.Email, okSubject, loadHeaderString +"<br>" + msg)
+	}
+	return msg, nil
 }
