@@ -18,7 +18,7 @@ func CloneRepo(cloneURL string, targetDir string) (err error) {
 	return err
 }
 
-func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
+func CommitAndPush(repoPath string, author ghmodels.CommitAuthor, triggerCommit string) (err error) {
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
 		Log.Error("Local Git Repo Open Issue", err)
@@ -31,7 +31,9 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
 		return err
 	}
 
-	commit, err := w.Commit(config.Cfg().GHAutoGenCommitMsg, &git.CommitOptions{
+	autoGenCommitMsg := config.Cfg().GHAutoGenCommitMsg + "_" + SubstringFirstN(triggerCommit,7)
+
+	commit, err := w.Commit(autoGenCommitMsg, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  author.Name,
 			Email: author.Email,
@@ -51,4 +53,15 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor) (err error) {
 	},})
 
 	return err
+}
+
+func SubstringFirstN(s string, n int) string {
+	i := 0
+	for j := range s {
+		if i == n {
+			return s[:j]
+		}
+		i++
+	}
+	return s
 }

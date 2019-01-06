@@ -138,8 +138,9 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 		}
 		return "An error occurred checking local repo for changes", err
 	}
+
 	if repoChanged {
-		err = gitutils.CommitAndPush(rootDir, commitAuthor)
+		err = gitutils.CommitAndPush(rootDir, commitAuthor, reqObj.HeadCommit.ID)
 		if err != nil {
 			Log.Error("An error occurred committing and pushing local repo changes: ", err)
 			if mode == asyncMode {
