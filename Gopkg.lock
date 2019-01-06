@@ -364,7 +364,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/dlclark/regexp2",
     "github.com/exlinc/golang-utils/envconfig",
     "github.com/exlinc/golang-utils/jsonhttp",
     "github.com/globalsign/mgo",

@@ -12,6 +12,7 @@ var validEnvKeys = map[string]struct{}{
 	"java_default_free": {},
 	"python_2_7_free":   {},
 	"python_3_4_free":   {},
+	"javascript_default_free":   {},
 }
 
 type BlockREPL struct {
@@ -170,7 +171,7 @@ func getProblemREPLPath(shebang string) (path string, err error) {
 
 // extractFileContents is a helper function that scans the file map object recursively and concatenates contents of each file
 // into a string
-func extractFileContents (files map[string]*wsenv.WorkspaceFile) (s string, err error) {
+func extractFileContents(files map[string]*wsenv.WorkspaceFile) (s string, err error) {
 	var contentsBuilder strings.Builder
 	for _, wf := range files {
 		if len(wf.Contents) > 0 {
@@ -179,7 +180,7 @@ func extractFileContents (files map[string]*wsenv.WorkspaceFile) (s string, err 
 		if len(wf.Children) > 0 {
 			childrenContents, err := extractFileContents(wf.Children)
 			if err != nil {
-				return "",err
+				return "", err
 			}
 			contentsBuilder.WriteString(childrenContents)
 		}

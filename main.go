@@ -10,6 +10,7 @@ import (
 	"github.com/exlskills/eocsutil/gitutils"
 	"github.com/exlskills/eocsutil/mdutils"
 	"github.com/exlskills/eocsutil/olx"
+	"github.com/exlskills/eocsutil/pdf"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"math/rand"
 	"os"
@@ -37,6 +38,7 @@ var Log = config.Cfg().GetLogger()
 func init() {
 	extfmt.RegisterExtFmt("eocs", eocs.NewEOCSFormat())
 	extfmt.RegisterExtFmt("olx", olx.NewOLXExtFmt())
+	extfmt.RegisterExtFmt("pdf", pdf.NewPDFExtFmt())
 }
 
 func main() {

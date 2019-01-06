@@ -386,7 +386,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	}
 	Log.Info("EXLskills 'course' changes: ", *cInfo)
 
-	if (len(elasticsearchURI) > 0) {
+	if len(elasticsearchURI) > 0 {
 		u, err := url.Parse(elasticsearchURI)
 		if err != nil {
 			Log.Errorf("Elasticsearch URI is invalid: %v. Parsing error: %s", elasticsearchURI, err.Error())
@@ -395,7 +395,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 
 		var elasticSearchClient *elastic.Client
 
-		if (u.Scheme == "https" && !config.Cfg().IsProductionMode()) {
+		if u.Scheme == "https" && !config.Cfg().IsProductionMode() {
 			// This is used for testing HTTPS backends bypassing Certificate validation
 			// Set ENV MODE=debug
 			tr := &http.Transport{
@@ -819,7 +819,7 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 		for _, blk := range vert.Blocks {
 			if blk.BlockType == "problem" {
 				qBlks = append(qBlks, blk)
-			} else if blk.BlockType == "exleditor" {
+			} else if blk.BlockType == "exleditor" && blk.REPL.EnvironmentKey != "javascript_default_free" {
 				var (
 					srcStr  string
 					tmplStr string
@@ -872,6 +872,17 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 					return section, nil, nil, nil, err
 				}
 				contentBuf.Write(replBlkBytes)
+				contentBuf.WriteString("\n\n")
+			} else if blk.BlockType == "exleditor" && blk.REPL.EnvironmentKey == "javascript_default_free" {
+				cpe, err := NewCPEditorEmbeddedBlock(blk.REPL)
+				if err != nil {
+					return section, nil, nil, nil, err
+				}
+				cpeBlkBytes, err := cpe.HTML()
+				if err != nil {
+					return section, nil, nil, nil, err
+				}
+				contentBuf.Write(cpeBlkBytes)
 				contentBuf.WriteString("\n\n")
 			} else if blk.BlockType == "html" {
 				mdContent, err := blk.GetContentMD()

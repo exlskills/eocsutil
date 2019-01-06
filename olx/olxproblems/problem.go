@@ -2,17 +2,7 @@ package olxproblems
 
 import (
 	"encoding/xml"
-	"github.com/dlclark/regexp2"
 	"github.com/exlskills/eocsutil/mdutils"
-)
-
-var (
-	reAmpSingle = regexp2.MustCompile("/(?<=`.*)(&amp;)(?=.*`)/g", 0)
-	reAmpMulti  = regexp2.MustCompile("/(?<=```.*)(&amp;)(?=.*```)/gms", 0)
-	reGtSingle  = regexp2.MustCompile("/(?<=`.*)(&gt;)(?=.*`)/g", 0)
-	reGtMulti   = regexp2.MustCompile("/(?<=```.*)(&gt;)(?=.*```)/gms", 0)
-	reLtSingle  = regexp2.MustCompile("/(?<=`.*)(&lt;)(?=.*`)/g", 0)
-	reLtMulti   = regexp2.MustCompile("/(?<=```.*)(&lt;)(?=.*```)/gms", 0)
 )
 
 type Problem struct {
@@ -57,31 +47,7 @@ func unescapeInnerMDP(inner string) string {
 }
 
 func unescapeInnerMD(inner string) (string, error) {
-	inner, err := reAmpSingle.Replace(inner, "&", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	inner, err = reAmpMulti.Replace(inner, "&", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	inner, err = reGtSingle.Replace(inner, ">", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	inner, err = reGtMulti.Replace(inner, ">", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	inner, err = reLtSingle.Replace(inner, "<", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	inner, err = reLtMulti.Replace(inner, "<", -1, -1)
-	if err != nil {
-		return "", err
-	}
-	return inner, err
+	return mdutils.UnescapeMD(inner)
 }
 
 func unescapeChoicesP(cg []Choice) {

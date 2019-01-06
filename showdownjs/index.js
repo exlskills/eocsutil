@@ -38,6 +38,8 @@ if (command === 'makehtml') {
     require('./conv.cmd.js').run('makemarkdown');
 } else if (command === 'makeolx') {
     require('./conv.cmd.js').run('makeolx');
+} else if (command === "unescapemd") {
+    require('./conv.cmd.js').run('unescapemd');
 } else {
     yargs.showHelp();
 }

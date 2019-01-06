@@ -1,6 +1,6 @@
 # EOCS Format Utilities
 
-Command-line tool and GoLang API for working with EOCS and OLX courseware. This project also supports importing/updating course to [EXLskills.com](https://exlskills.com/)
+Command-line tool and GoLang API for working with EOCS and OLX courseware. This project also supports importing/updating course to [EXLskills.com](https://exlskills.com/) and e-books in PDF/MD formats!
 
 ## Prerequisites
 
