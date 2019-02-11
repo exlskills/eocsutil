@@ -316,8 +316,8 @@ var markdownToXml = function(markdown) {
             var answersList = p.split('\n'),
 
                 isRangeToleranceCase = function(answer) {
-                    return _.contains(
-                        ['[', '('], answer[0]) && _.contains([']', ')'], answer[answer.length - 1]
+                    return _.includes(
+                        ['[', '('], answer[0]) && _.includes([']', ')'], answer[answer.length - 1]
                     );
                 },
 
