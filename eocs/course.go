@@ -339,11 +339,13 @@ func loadReplForEOCS(yamlBytes []byte, rootPath string) (rpl *BlockREPL, err err
 // It takes the course objects alog with the target storage parameters, calls convertToESCourse to generate storage-ready objects
 // from the course object and manages the load
 func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearchURI string, elasticsearchIndex string) (err error) {
+
 	sess, err := mgo.DialWithTimeout(mongoURI, time.Duration(10*time.Second))
 	if err != nil {
 		Log.Error("MongoDB error", err)
 		return err
 	}
+
 	esc, exams, qs, vcs, esearchdocs, err := convertToESCourse(course)
 	if err != nil {
 		return err
@@ -379,6 +381,7 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 		Log.Info("EXLskills 'exam' changes: ", *cInfo)
 	}
 
+	Log.Debugf("Course Timestamp: %s", esc.ContentUpdatedAt)
 	cInfo, err := db.C("course").UpsertId(esc.ID, esc)
 	if err != nil {
 		Log.Errorf("MongoDB error with 'course' object: %v, and error: %s", esc, err.Error())
@@ -497,6 +500,7 @@ func convertToESCourse(course *Course) (esc *esmodels.Course, exams []*esmodels.
 		Topics:             extraAttrCSVToStrSlice(course.GetExtraAttributes()["topics"]),
 		RepoURL:            course.GetExtraAttributes()["repo_url"],
 		Weight:             weight,
+		ContentUpdatedAt:   course.ContentUpdatedAt,
 	}
 	if course.GetExtraAttributes()["instructor_timekit"] != "" {
 		instTK := esmodels.InstructorTimekit{}
@@ -574,6 +578,8 @@ func extractESUnitFeatures(courseID string, courseRepoUrl string, chap *Chapter,
 	unit.Sections = esmodels.SectionsWrapper{
 		Sections: sections,
 	}
+
+	unit.UpdatedAt = chap.UpdatedAt
 
 	esearchdoc := &esmodels.ElasticsearchGenDoc{
 		ID:       toGlobalId("Unit", unit.ID),
@@ -944,6 +950,8 @@ func extractESSectionFeatures(courseID, courseRepoUrl, unitID string, index int,
 		section.Cards.Cards = append(section.Cards.Cards, card)
 		Log.Debug("Added Card ", vert.DisplayName)
 
+		section.UpdatedAt = sequential.UpdatedAt
+
 		esearchdoc := &esmodels.ElasticsearchGenDoc{
 			ID:          toGlobalId("Card", vert.URLName),
 			DocType:     "card",
@@ -1114,6 +1122,7 @@ type Course struct {
 	EstMinutes        int                         `yaml:"est_minutes"`
 	InstructorTimekit *esmodels.InstructorTimekit `yaml:"instructor_timekit"`
 	Chapters          []*Chapter                  `yaml:"-"`
+	ContentUpdatedAt  time.Time                   `yaml:"-"`
 }
 
 func (course *Course) GetDisplayName() string {
@@ -1169,4 +1178,8 @@ func (course *Course) GetExtraAttributes() map[string]string {
 
 func (course *Course) GetChapters() []ir.Chapter {
 	return chaptersToIRChapters(course.Chapters)
+}
+
+func (course *Course) SetContentUpdatedAt(updatedAt time.Time) {
+	course.ContentUpdatedAt = updatedAt
 }

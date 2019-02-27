@@ -2,6 +2,7 @@ package eocs
 
 import (
 	"github.com/exlskills/eocsutil/ir"
+	"time"
 )
 
 func sequentialsToIRSequentials(seqs []*Sequential) []ir.Sequential {
@@ -36,6 +37,7 @@ type Sequential struct {
 	Graded      bool        `yaml:"graded"`
 	Format      string      `yaml:"format"`
 	Verticals   []*Vertical `yaml:"-"`
+	UpdatedAt   time.Time   `yaml:"-"`
 }
 
 func (seq *Sequential) GetDisplayName() string {
@@ -60,4 +62,8 @@ func (seq *Sequential) GetExtraAttributes() map[string]string {
 
 func (seq *Sequential) GetVerticals() []ir.Vertical {
 	return verticalsToIRVerticals(seq.Verticals)
+}
+
+func (seq *Sequential) SetUpdatedAt(updatedAt time.Time) {
+	seq.UpdatedAt = updatedAt
 }

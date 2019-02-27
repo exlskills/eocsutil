@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/exlskills/eocsutil/ir"
 	"sync"
+	"time"
 )
 
 func chaptersToIRChapters(chaps []*Chapter) []ir.Chapter {
@@ -57,6 +58,7 @@ type Chapter struct {
 	URLName     string        `yaml:"url_name"`
 	DisplayName string        `yaml:"display_name"`
 	Sequentials []*Sequential `yaml:"-"`
+	UpdatedAt   time.Time     `yaml:"-"`
 }
 
 func (chap *Chapter) GetDisplayName() string {
@@ -73,4 +75,8 @@ func (chap *Chapter) GetExtraAttributes() map[string]string {
 
 func (chap *Chapter) GetSequentials() []ir.Sequential {
 	return sequentialsToIRSequentials(chap.Sequentials)
+}
+
+func (chap *Chapter) SetUpdatedAt(updatedAt time.Time) {
+	chap.UpdatedAt = updatedAt
 }

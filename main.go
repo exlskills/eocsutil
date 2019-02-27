@@ -64,7 +64,7 @@ func run() {
 			return
 		}
 
-		// This is non-MongoDB only flow below
+		// This is non-MongoDB only flow below !!!!!!!!!!!! See eocs/eocs.go for MongoDB logic
 		Log.Info("Importing course for conversion ...")
 		ir, err := getExtFmtF(*convertFromFormat).Import(verifyAndCleanURIF(*convertFromURI))
 		if err != nil {
@@ -78,7 +78,6 @@ func run() {
 			Log.Errorf("Git reader failed with: %s", err.Error())
 			return
 		}
-
 
 		err = getExtFmtF(*convertToFormat).Export(ir, verifyAndCleanURIF(*convertToURI), *convertForce)
 		if err != nil {

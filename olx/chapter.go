@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func chaptersToIRChapters(chaps []*Chapter) []ir.Chapter {
@@ -41,6 +42,7 @@ type Chapter struct {
 	DisplayName string        `xml:"display_name,attr"`
 	Sequentials []*Sequential `xml:"sequential"`
 	ExtraAttrs  []xml.Attr    `xml:",any,attr"`
+	UpdatedAt   time.Time
 }
 
 func (chap *Chapter) resolveRecursive(rootDir string) (err error) {
@@ -83,4 +85,8 @@ func (chap *Chapter) GetExtraAttributes() map[string]string {
 
 func (chap *Chapter) GetSequentials() []ir.Sequential {
 	return sequentialsToIRSequentials(chap.Sequentials)
+}
+
+func (chap *Chapter) SetUpdatedAt(updatedAt time.Time) {
+	chap.UpdatedAt = updatedAt
 }

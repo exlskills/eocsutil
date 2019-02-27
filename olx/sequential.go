@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func sequentialsToIRSequentials(seqs []*Sequential) []ir.Sequential {
@@ -45,6 +46,7 @@ type Sequential struct {
 	Format      string      `xml:"format,attr"`
 	ExtraAttrs  []xml.Attr  `xml:",any,attr"`
 	Verticals   []*Vertical `xml:"vertical"`
+	UpdatedAt   time.Time
 }
 
 func (seq *Sequential) resolveRecursive(rootDir string) (err error) {
@@ -97,4 +99,8 @@ func (seq *Sequential) GetExtraAttributes() map[string]string {
 
 func (seq *Sequential) GetVerticals() []ir.Vertical {
 	return verticalsToIRVerticals(seq.Verticals)
+}
+
+func (seq *Sequential) SetUpdatedAt(updatedAt time.Time) {
+	seq.UpdatedAt = updatedAt
 }

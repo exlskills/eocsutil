@@ -18,8 +18,14 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 		return err
 	}
 
+	courseUpdatedAt := time.Time{}
+
 	for _, chapter := range course.GetChapters() {
+		chapUpdatedAt := time.Time{}
+
 		for _, sequential := range chapter.GetSequentials() {
+			seqUpdatedAt := time.Time{}
+
 			for _, vert := range sequential.GetVerticals() {
 				createdAt := time.Time{}
 				updatedAt := time.Time{}
@@ -44,22 +50,46 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 								updatedAt = commit.Author.When
 							}
 
-							// Uncomment this to get createdAt
+							// Uncomment this to continue looping and get createdAt from the 1st commit
 							break
 						}
 					}
-				}
+				}  // On Blocks of the Vertical
 				Log.Debugf("UpdatedAt %s", updatedAt)
 
-				if (!createdAt.IsZero()) {
+				if !createdAt.IsZero() {
 					// Future, see the comment above
 				}
-				if (!updatedAt.IsZero()) {
-					vert.SetUpdatedAt(updatedAt)
-				}
 
+				if !updatedAt.IsZero() {
+					vert.SetUpdatedAt(updatedAt)
+					if seqUpdatedAt.IsZero() || seqUpdatedAt.Before(updatedAt) {
+						seqUpdatedAt = updatedAt
+					}
+				}
+			}  // On Verticals of the Sequential
+
+			Log.Debugf("seqUpdatedAt %s", seqUpdatedAt)
+			if !seqUpdatedAt.IsZero() {
+				sequential.SetUpdatedAt(seqUpdatedAt)
+				if chapUpdatedAt.IsZero() || chapUpdatedAt.Before(seqUpdatedAt) {
+					chapUpdatedAt = seqUpdatedAt
+				}
+			}
+		} // On Sequentials of the Chapter
+
+		Log.Debugf("chapUpdatedAt %s", chapUpdatedAt)
+		if !chapUpdatedAt.IsZero() {
+			chapter.SetUpdatedAt(chapUpdatedAt)
+			if courseUpdatedAt.IsZero() || courseUpdatedAt.Before(chapUpdatedAt) {
+				courseUpdatedAt = chapUpdatedAt
 			}
 		}
+	} // On Chapters of the Course
+
+	Log.Debugf("courseUpdatedAt %s", courseUpdatedAt)
+	if !courseUpdatedAt.IsZero() {
+		course.SetContentUpdatedAt(courseUpdatedAt)
 	}
 
 	return
@@ -87,7 +117,7 @@ func IsRepoContentUpdated(repoPath string) (contentChanged bool, err error) {
 	}
 
 	if status.IsClean() {
-		Log.Info("No changes to Git Repo content")
+		Log.Info("No changes to Local Git Repo content")
 		return false, nil
 	}
 

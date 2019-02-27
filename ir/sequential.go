@@ -1,5 +1,7 @@
 package ir
 
+import "time"
+
 type Sequential interface {
 	GetDisplayName() string
 	GetURLName() string
@@ -7,4 +9,5 @@ type Sequential interface {
 	GetAssignmentType() string
 	GetExtraAttributes() map[string]string
 	GetVerticals() []Vertical
+	SetUpdatedAt(updatedAt time.Time)
 }

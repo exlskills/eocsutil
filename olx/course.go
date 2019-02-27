@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func resolveCourseRecursive(rootDir string) (*Course, error) {
@@ -89,6 +90,7 @@ type Course struct {
 	Language    string     `xml:"language,attr"`
 	ExtraAttrs  []xml.Attr `xml:",any,attr"`
 	Chapters    []*Chapter `xml:"chapter"`
+	ContentUpdatedAt   time.Time
 }
 
 func (course *Course) GetDisplayName() string {
@@ -121,4 +123,8 @@ func (course *Course) GetExtraAttributes() map[string]string {
 
 func (course *Course) GetChapters() []ir.Chapter {
 	return chaptersToIRChapters(course.Chapters)
+}
+
+func (course *Course) SetContentUpdatedAt(updatedAt time.Time) {
+	course.ContentUpdatedAt = updatedAt
 }

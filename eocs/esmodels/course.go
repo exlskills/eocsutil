@@ -29,4 +29,5 @@ type Course struct {
 	Weight             int                `bson:"weight"`
 	CreatedAt          time.Time          `bson:"created_at"`
 	UpdatedAt          time.Time          `bson:"updated_at"`
+	ContentUpdatedAt   time.Time          `bson:"content_updated_at"`
 }

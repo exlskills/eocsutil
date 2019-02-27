@@ -1,5 +1,7 @@
 package ir
 
+import "time"
+
 type Course interface {
 	GetDisplayName() string
 	GetURLName() string
@@ -9,4 +11,5 @@ type Course interface {
 	GetLanguage() string
 	GetExtraAttributes() map[string]string
 	GetChapters() []Chapter
+	SetContentUpdatedAt(updatedAt time.Time)
 }

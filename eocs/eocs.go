@@ -49,15 +49,20 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 	if err != nil {
 		return err
 	}
+
 	Log.Info("Course import complete!")
+
 	if config.Cfg().MgoDBName == "" {
 		return errors.New("for EOCS course conversion the MGO_DB_NAME environment variable must be set to the name of the MongoDB database to write to")
 	}
+
+	// Set UpdatedAt values based on Git commits
 	err = gitutils.SetCourseComponentsTimestamps(fromUri, course)
 	if err != nil {
 		Log.Errorf("Git reader failed with: %s", err.Error())
 		return err
 	}
 
+	// Load data into MongoDB
 	return upsertCourseRecursive(course, toUri, config.Cfg().MgoDBName, config.Cfg().ElasticsearchURI, config.Cfg().ElasticsearchBaseIndex)
 }
