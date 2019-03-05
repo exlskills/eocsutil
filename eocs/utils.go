@@ -43,10 +43,12 @@ func concatDirName(index int, dispName string) string {
 
 func indexAndNameFromConcatenated(concated string) (idx int, name string, err error) {
 	if !strings.Contains(concated, "_") {
+		Log.Errorf("Issue with %s", concated)
 		return 0, "", errors.New("eocs: dir/file name must take the form of 02_File Name where 02 is the index and 'File Name' is the name of the chapter/sequential/vertical/block")
 	}
 	splitStr := strings.SplitN(concated, "_", 2)
 	if len(splitStr) != 2 {
+		Log.Errorf("Issue with %s", splitStr)
 		return 0, "", errors.New("eocs: dir/file name must take the form of 02_File Name where 02 is the index and 'File Name' is the name of the chapter/sequential/vertical/block")
 	}
 	idx, err = strconv.Atoi(splitStr[0])
@@ -61,6 +63,7 @@ var ignoredDirs = map[string]struct{}{
 	".hg":   {},
 	".bzr":  {},
 	".idea": {},
+	".vscode": {},
 	".":     {},
 	// TODO implement assets dir, but for now ignore
 	"assets": {},
