@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/handlers"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var Log = config.Cfg().GetLogger()
@@ -13,8 +14,15 @@ var CorsHandler = handlers.CORS(handlers.AllowedMethods([]string{"GET", "POST", 
 
 func ServeGH() {
 	Log.Info("Starting GH HTTP server")
-	err := http.ListenAndServe(fmt.Sprintf("%s:%s", config.Cfg().GHServerAddr, config.Cfg().GHServerPort), CorsHandler(handlers.CombinedLoggingHandler(os.Stdout, createRouter())))
-	Log.Error(err)
-	// http.ListenAndServe(fmt.Sprintf("%s:%s", config.Cfg().ListenAddress, config.Cfg().ListenPort), CorsHandler(routes.CreateRouter()))
+
+	branchesInConfig := strings.Split(config.Cfg().GHWebhookBranch, ",")
+	Log.Info("Branch list ", branchesInConfig)
+	if strings.ContainsAny(config.Cfg().GHWebhookBranch, " ") || len(config.Cfg().GHWebhookBranch) < 1 || len(branchesInConfig) < 1 {
+		Log.Errorf("Invalid Webhook Branch String %s", config.Cfg().GHWebhookBranch)
+	} else {
+		err := http.ListenAndServe(fmt.Sprintf("%s:%s", config.Cfg().GHServerAddr, config.Cfg().GHServerPort), CorsHandler(handlers.CombinedLoggingHandler(os.Stdout, createRouter())))
+		Log.Error(err)
+		// http.ListenAndServe(fmt.Sprintf("%s:%s", config.Cfg().ListenAddress, config.Cfg().ListenPort), CorsHandler(routes.CreateRouter()))
+	}
 	Log.Info("Stopped GH HTTP server")
 }

@@ -84,7 +84,7 @@ func GracefulTeardown() {
 		return
 	}
 	sdShutdown = true
-	if serverCmd != nil {
+	if serverCmd != nil && serverCmd.Process != nil {
 		Log.Info("Shutting down showdown server")
 		if err := serverCmd.Process.Kill(); err != nil {
 			Log.Error("An error occurred terminating the showdownjs markdown REST API: ", err.Error())

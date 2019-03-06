@@ -8,6 +8,7 @@ import (
 	"github.com/exlskills/eocsutil/ghmodels"
 	"github.com/exlskills/eocsutil/gitutils"
 	"github.com/exlskills/eocsutil/smtputils"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -56,19 +57,41 @@ func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
 func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode int) (message string, err error) {
 	loadHeaderString := fmt.Sprintf("Course Repository %s; Head Commit %s ", reqObj.Repository.Name, reqObj.HeadCommit.ID)
 	Log.Info(loadHeaderString)
-	if reqObj.Ref != "refs/heads/master" {
-		Log.Info("Skipping push on ref: ", reqObj.Ref)
-		return "No-op, must be master branch to sync", nil
+	if len(reqObj.Ref) < 11 || !strings.HasPrefix(reqObj.Ref, "refs/heads/") {
+		Log.Info("Skipping push on empty or invalid ref: ", reqObj.Ref)
+		return "No-op, must be a valid push", nil
 	}
 
+	branchInHook := reqObj.Ref[11:len(reqObj.Ref)]  // cut the leading 11 chars out: refs/heads/
+	// Note: config.Cfg().GHWebhookBranch is prevalidated at server start
+	branchesInConfig := strings.Split(config.Cfg().GHWebhookBranch, ",")
+	validBranch := false
+	for _, a := range branchesInConfig {
+		if a == branchInHook {
+			validBranch = true
+			break
+		}
+	}
+
+	if !validBranch  {
+		Log.Infof("Branch %s is not in the configured Branch List. Skipping push on ref %s ", branchInHook, reqObj.Ref)
+		return "No-op, must be in the branch list to sync", nil
+	}
+
+	// Note: on a new branch push, only the head_commit is present
+	commits := reqObj.Commits
 	if len(reqObj.Commits) < 1 {
+		commits = append(commits, reqObj.HeadCommit)
+	}
+
+	if len(commits) < 1 {
 		Log.Info("Skipping. No commits")
 		return "No-op, must be commit-based", nil
 	}
 
 	hasRealCommits := false
 	commitAuthor := ghmodels.CommitAuthor{}
-	for _, commit := range reqObj.Commits {
+	for _, commit := range commits {
 		if !strings.Contains(commit.Message, config.Cfg().GHAutoGenCommitMsg) {
 			hasRealCommits = true
 			commitAuthor = commit.Author
@@ -90,13 +113,13 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 	}
 	defer os.RemoveAll(rootDir)
 
-	err = gitutils.CloneRepo(reqObj.Repository.CloneURL, rootDir)
+	err = gitutils.CloneRepo(reqObj.Repository.CloneURL, plumbing.NewBranchReferenceName(branchInHook), rootDir)
 	if err != nil {
-		Log.Error("An error occurred cloning repo: ", err)
+		Log.Error("An error occurred cloning repo/branch: ", err)
 		if mode == asyncMode {
 			smtputils.SendEmail(reqObj.HeadCommit.Author.Email, failedSubject, loadHeaderString+"<br>Repo Clone Failed")
 		}
-		return "An error occurred cloning repo", err
+		return "An error occurred cloning repo/branch", err
 	}
 
 	/*

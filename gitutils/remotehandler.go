@@ -4,16 +4,19 @@ import (
 	"github.com/exlskills/eocsutil/config"
 	"github.com/exlskills/eocsutil/ghmodels"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"time"
 )
 
-func CloneRepo(cloneURL string, targetDir string) (err error) {
-	Log.Infof("Cloning %s into %s", cloneURL, targetDir)
+func CloneRepo(cloneURL string, cloneRef plumbing.ReferenceName, targetDir string) (err error) {
+	Log.Infof("Cloning repo %s branch %s into %s", cloneURL, cloneRef, targetDir)
 	_, err = git.PlainClone(targetDir, false, &git.CloneOptions{
 		URL:               cloneURL,
+		ReferenceName:     cloneRef,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		SingleBranch:  true,
 	})
 	return err
 }
@@ -45,8 +48,7 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor, triggerCommit 
 		return err
 	}
 
-	Log.Info("Generated auto Commit ")
-	Log.Debug("Commit ", commit)
+	Log.Info("Generated auto Commit ", commit)
 	err = r.Push(&git.PushOptions{Auth: &http.BasicAuth{
 		Username: "abc123", // anything except an empty string
 		Password: config.Cfg().GHUserToken,
