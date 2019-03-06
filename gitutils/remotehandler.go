@@ -11,7 +11,7 @@ import (
 )
 
 func CloneRepo(cloneURL string, cloneRef plumbing.ReferenceName, targetDir string) (err error) {
-	Log.Infof("Cloning repo %s branch %s into %s", cloneURL, cloneRef, targetDir)
+	Log.Infof("Cloning repo %s ref %s into %s", cloneURL, cloneRef, targetDir)
 	_, err = git.PlainClone(targetDir, false, &git.CloneOptions{
 		URL:               cloneURL,
 		ReferenceName:     cloneRef,

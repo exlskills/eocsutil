@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	asyncMode     = 0
-	syncMode      = 1
-	failedSubject = "Course Load Failed"
-	okSubject     = "Course Load Processed Successfully"
+	asyncMode = 0
+	syncMode  = 1
 )
+
+var failedSubject = config.Cfg().ServerNickname + ": Course Load Failed"
+var okSubject = config.Cfg().ServerNickname + ": Course Load Processed Successfully"
 
 func repoPushEventWebhookLauncher(w http.ResponseWriter, r *http.Request) {
 	Log.Debug("In repoPushEventWebhookLauncher")
@@ -55,14 +56,13 @@ func repoPushEventWebhook(w http.ResponseWriter, r *http.Request) {
 }
 
 func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode int) (message string, err error) {
-	loadHeaderString := fmt.Sprintf("Course Repository %s; Head Commit %s ", reqObj.Repository.Name, reqObj.HeadCommit.ID)
-	Log.Info(loadHeaderString)
+
 	if len(reqObj.Ref) < 11 || !strings.HasPrefix(reqObj.Ref, "refs/heads/") {
 		Log.Info("Skipping push on empty or invalid ref: ", reqObj.Ref)
 		return "No-op, must be a valid push", nil
 	}
 
-	branchInHook := reqObj.Ref[11:len(reqObj.Ref)]  // cut the leading 11 chars out: refs/heads/
+	branchInHook := reqObj.Ref[11:len(reqObj.Ref)] // cut the leading 11 chars out: refs/heads/
 	// Note: config.Cfg().GHWebhookBranch is prevalidated at server start
 	branchesInConfig := strings.Split(config.Cfg().GHWebhookBranch, ",")
 	validBranch := false
@@ -73,15 +73,19 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 		}
 	}
 
-	if !validBranch  {
+	if !validBranch {
 		Log.Infof("Branch %s is not in the configured Branch List. Skipping push on ref %s ", branchInHook, reqObj.Ref)
 		return "No-op, must be in the branch list to sync", nil
 	}
 
 	// Note: on a new branch push, only the head_commit is present
+	newBranchCommit := false
+	commitId := reqObj.HeadCommit.ID
+	commitAuthor := reqObj.HeadCommit.Author
 	commits := reqObj.Commits
 	if len(reqObj.Commits) < 1 {
 		commits = append(commits, reqObj.HeadCommit)
+		newBranchCommit = true
 	}
 
 	if len(commits) < 1 {
@@ -89,19 +93,24 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 		return "No-op, must be commit-based", nil
 	}
 
-	hasRealCommits := false
-	commitAuthor := ghmodels.CommitAuthor{}
-	for _, commit := range commits {
-		if !strings.Contains(commit.Message, config.Cfg().GHAutoGenCommitMsg) {
-			hasRealCommits = true
-			commitAuthor = commit.Author
-			break
+	if !newBranchCommit {
+		hasRealCommits := false
+		for _, commit := range commits {
+			if !strings.Contains(commit.Message, config.Cfg().GHAutoGenCommitMsg) {
+				hasRealCommits = true
+				commitAuthor = commit.Author
+				commitId = commit.ID
+				break
+			}
+		}
+		if !hasRealCommits {
+			Log.Info("Skipping. Auto-gen commits only")
+			return "No-op, auto#gen commit", nil
 		}
 	}
-	if !hasRealCommits {
-		Log.Info("Skipping. Auto-gen commits only")
-		return "No-op, auto#gen commit", nil
-	}
+
+	loadHeaderString := fmt.Sprintf("Course Repository %s; Branch %s; Commit %s ", reqObj.Repository.Name, branchInHook, commitId)
+	Log.Info(loadHeaderString)
 
 	rootDir, err := ioutil.TempDir("", "eocsutil-repo-dl-")
 	if err != nil {
@@ -178,7 +187,7 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 		msg = msg + ". Remote Git Repository updated! Run GIT PULL"
 	}
 	if mode == asyncMode {
-		smtputils.SendEmail(reqObj.HeadCommit.Author.Email, okSubject, loadHeaderString +"<br>" + msg)
+		smtputils.SendEmail(reqObj.HeadCommit.Author.Email, okSubject, loadHeaderString+"<br>"+msg)
 	}
 	return msg, nil
 }

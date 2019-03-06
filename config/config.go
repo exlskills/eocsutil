@@ -19,6 +19,7 @@ type Config struct {
 	GHUserToken            string `envconfig:"GH_USER_TOKEN"`
 	GHAutoGenCommitMsg     string `envconfig:"GH_AUTOGEN_COMMIT_MSG" default:"auto#gen"`
 	GHWebhookBranch        string `envconfig:"GH_WEBHOOK_BRANCH" default:"master"`
+	ServerNickname         string `envconfig:"SERVER_NICKNAME" default:"EOCS_GH"`
 	ElasticsearchURI       string `envconfig:"ELASTICSEARCH_URI"`
 	ElasticsearchBaseIndex string `envconfig:"ELASTICSEARCH_BASE_INDEX" default:"learn"`
 	SMTPFromName           string `envconfig:"SMTP_FROM_NAME" default:"EOCS Course Loader Service"`
