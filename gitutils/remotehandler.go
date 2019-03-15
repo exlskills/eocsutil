@@ -7,6 +7,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"time"
 )
 
@@ -19,6 +20,17 @@ func CloneRepo(cloneURL string, cloneRef plumbing.ReferenceName, targetDir strin
 		SingleBranch:  true,
 	})
 	return err
+}
+
+func CloneRepoMem(cloneURL string, cloneRef plumbing.ReferenceName) (r *git.Repository, err error) {
+	Log.Infof("Cloning repo %s ref %s into memory", cloneURL, cloneRef)
+	r, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
+		URL:               cloneURL,
+		ReferenceName:     cloneRef,
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		SingleBranch:  true,
+	})
+	return r, err
 }
 
 func CommitAndPush(repoPath string, author ghmodels.CommitAuthor, triggerCommit string) (err error) {

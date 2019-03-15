@@ -94,6 +94,7 @@ func GracefulTeardown() {
 }
 
 func MakeOLX(md string) (olx string, err error) {
+	// Log.Debug("In MakeOLX")
 	if useREST {
 		return callSDServerRESTAPI("makeolx", md)
 	}
@@ -101,6 +102,7 @@ func MakeOLX(md string) (olx string, err error) {
 }
 
 func MakeHTML(md, flavor string) (html string, err error) {
+	// Log.Debug("In MakeHTML")
 	if useREST {
 		return callSDServerRESTAPI("makehtml", md)
 	}
@@ -108,6 +110,7 @@ func MakeHTML(md, flavor string) (html string, err error) {
 }
 
 func MakeMD(html, flavor string) (md string, err error) {
+	// Log.Debug("In MakeMD")
 	if useREST {
 		return callSDServerRESTAPI("makemarkdown", html)
 	}
@@ -115,6 +118,7 @@ func MakeMD(html, flavor string) (md string, err error) {
 }
 
 func UnescapeMD(md string) (escaped string, err error) {
+	// Log.Debug("In UnescapeMD")
 	if useREST {
 		return callSDServerRESTAPI("unescapemd", md)
 	}

@@ -384,6 +384,9 @@ func upsertCourseRecursive(course *Course, mongoURI, dbName string, elasticsearc
 	Log.Debugf("Course Timestamp: %s", esc.ContentUpdatedAt)
 	// Note: this records the time the record was inserted or potentially updated in the target DB
 	esc.StaticDataUpdatedAt = time.Now()
+	// Record-level field
+	esc.UpdatedAt = time.Now()
+
 	cInfo, err := db.C("course").UpsertId(esc.ID, esc)
 	if err != nil {
 		Log.Errorf("MongoDB error with 'course' object: %v, and error: %s", esc, err.Error())

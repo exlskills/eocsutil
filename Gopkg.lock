@@ -21,17 +21,6 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
-  digest = "1:556b75e96f02319585d253d262c4ce5dfdf4b28be474f1e0877c5f4f9b10cf9e"
-  name = "github.com/dlclark/regexp2"
-  packages = [
-    ".",
-    "syntax",
-  ]
-  pruneopts = ""
-  revision = "487489b64fb796de2e55f4e8a4ad1e145f80e957"
-  version = "v1.1.6"
-
-[[projects]]
   digest = "1:f21c1a68814ffc02db479adbd973c710e0ece6150ddc0726655c0a2048299152"
   name = "github.com/emirpasic/gods"
   packages = [
@@ -377,6 +366,7 @@
     "github.com/sirupsen/logrus",
     "gopkg.in/alecthomas/kingpin.v2",
     "gopkg.in/src-d/go-git.v4",
+    "gopkg.in/src-d/go-git.v4/plumbing",
     "gopkg.in/src-d/go-git.v4/plumbing/object",
     "gopkg.in/src-d/go-git.v4/plumbing/transport/http",
     "gopkg.in/yaml.v2",
