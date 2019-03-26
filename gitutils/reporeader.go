@@ -18,18 +18,18 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 
 	repoFS, err := git.PlainOpen(repoPath)
 	if err != nil {
-		Log.Error("Local Git Repo Issue %v", err)
+		Log.Error("Local Git Repo Issue ", err)
 		return err
 	}
 	headRef, err := repoFS.Head()
 	if err != nil {
-		Log.Error("Local Git Repo Head Ref Issue %v", err)
+		Log.Error("Local Git Repo Head Ref Issue ", err)
 		return err
 	}
 	Log.Debug("Head Ref Name ", headRef.Name())
 	list, err := repoFS.Remotes()
 	if err != nil {
-		Log.Error("Local Git Repo Remotes Issue %v", err)
+		Log.Error("Local Git Repo Remotes Issue ", err)
 		return err
 	}
 
@@ -37,7 +37,7 @@ func SetCourseComponentsTimestamps(repoPath string, course ir.Course) (err error
 	if len(list) > 0 {
 		repoMem, err := CloneRepoMem(list[0].Config().URLs[0], headRef.Name())
 		if err != nil {
-			Log.Error("Local Git Repo Clone Remote into Memory Issue %v", err)
+			Log.Error("Local Git Repo Clone Remote into Memory Issue ", err)
 			return err
 		}
 		r = repoMem

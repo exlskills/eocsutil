@@ -13,23 +13,13 @@ import (
 
 func CloneRepo(cloneURL string, cloneRef plumbing.ReferenceName, targetDir string) (err error) {
 	Log.Infof("Cloning repo %s ref %s into %s", cloneURL, cloneRef, targetDir)
-	_, err = git.PlainClone(targetDir, false, &git.CloneOptions{
-		URL:               cloneURL,
-		ReferenceName:     cloneRef,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-		SingleBranch:  true,
-	})
+	_, err = git.PlainClone(targetDir, false, genCloneOptions(cloneURL, cloneRef))
 	return err
 }
 
 func CloneRepoMem(cloneURL string, cloneRef plumbing.ReferenceName) (r *git.Repository, err error) {
 	Log.Infof("Cloning repo %s ref %s into memory", cloneURL, cloneRef)
-	r, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-		URL:               cloneURL,
-		ReferenceName:     cloneRef,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-		SingleBranch:  true,
-	})
+	r, err = git.Clone(memory.NewStorage(), nil, genCloneOptions(cloneURL, cloneRef))
 	return r, err
 }
 
@@ -46,7 +36,7 @@ func CommitAndPush(repoPath string, author ghmodels.CommitAuthor, triggerCommit 
 		return err
 	}
 
-	autoGenCommitMsg := config.Cfg().GHAutoGenCommitMsg + "_" + SubstringFirstN(triggerCommit,7)
+	autoGenCommitMsg := config.Cfg().GHAutoGenCommitMsg + "_" + SubstringFirstN(triggerCommit, 7)
 
 	commit, err := w.Commit(autoGenCommitMsg, &git.CommitOptions{
 		Author: &object.Signature{
@@ -78,4 +68,20 @@ func SubstringFirstN(s string, n int) string {
 		i++
 	}
 	return s
+}
+
+func genCloneOptions(cloneURL string, cloneRef plumbing.ReferenceName) *git.CloneOptions {
+	cloneOpt := &git.CloneOptions{
+		URL:               cloneURL,
+		ReferenceName:     cloneRef,
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		SingleBranch:      true,
+	}
+	if len(config.Cfg().GHUserToken) > 0 {
+		cloneOpt.Auth = &http.BasicAuth{
+			Username: "abc123", // anything except an empty string
+			Password: config.Cfg().GHUserToken,
+		}
+	}
+	return cloneOpt
 }

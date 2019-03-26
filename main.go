@@ -56,7 +56,7 @@ func run() {
 	switch kingpin.Parse() {
 	case "convert":
 		if strings.HasPrefix(*convertToURI, "mongodb://") {
-			err := eocs.NewEOCSFormat().Push(*convertFromURI, *convertToURI)
+			err := eocs.NewEOCSFormat().Push(*convertFromURI, *convertToURI, false)
 			if err != nil {
 				Log.Errorf("Course push failed: %s", err.Error())
 				return
@@ -75,8 +75,7 @@ func run() {
 
 		err = gitutils.SetCourseComponentsTimestamps(*convertFromURI, ir)
 		if err != nil {
-			Log.Errorf("Git reader failed with: %s", err.Error())
-			return
+			Log.Info("Git reader failed - Timestamps will not be assigned")
 		}
 
 		err = getExtFmtF(*convertToFormat).Export(ir, verifyAndCleanURIF(*convertToURI), *convertForce)

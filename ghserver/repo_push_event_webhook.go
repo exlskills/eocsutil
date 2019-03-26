@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	asyncMode = 0
-	syncMode  = 1
+	asyncMode = 0  // report Ok back to webhook upon initial validation
+	syncMode  = 1  // reply to the webhook after the process completion - over GitHub's timeout
 )
 
 var failedSubject = config.Cfg().ServerNickname + ": Course Load Failed"
@@ -152,7 +152,7 @@ func repoPushEventWebhookProcessor(reqObj ghmodels.RepoPushEventRequest, mode in
 	courseDir := unzippedFilePaths[0]
 	*/
 
-	err = eocs.NewEOCSFormat().Push(rootDir, config.Cfg().GHServerMongoURI)
+	err = eocs.NewEOCSFormat().Push(rootDir, config.Cfg().GHServerMongoURI, true)
 	if err != nil {
 		Log.Errorf("Course push failed: %s", err.Error())
 		if mode == asyncMode {

@@ -40,7 +40,7 @@ func (e *EOCS) Export(fromIntermediateRepresentation ir.Course, toUri string, fo
 	return exportCourseRecursive(fromIntermediateRepresentation, rootDir)
 }
 
-func (e *EOCS) Push(fromUri, toUri string) error {
+func (e *EOCS) Push(fromUri, toUri string, isServer bool) error {
 	rootDir, err := eocsuri.GetAbsolutePathFromFileURI(fromUri)
 	if err != nil {
 		return err
@@ -59,8 +59,12 @@ func (e *EOCS) Push(fromUri, toUri string) error {
 	// Set UpdatedAt values based on Git commits
 	err = gitutils.SetCourseComponentsTimestamps(fromUri, course)
 	if err != nil {
-		Log.Errorf("Git reader failed with: %s", err.Error())
-		return err
+		if isServer {
+			Log.Errorf("Git reader failed with: %s", err.Error())
+			return err
+		} else {
+			Log.Info("Git reader failed - Timestamps will not be assigned")
+		}
 	}
 
 	// Load data into MongoDB
