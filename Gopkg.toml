@@ -48,3 +48,7 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
+
+[[constraint]]
+  name = "github.com/olivere/elastic"
+  version = "^v6.2.12"
